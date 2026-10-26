@@ -278,9 +278,46 @@
     </div>
   </div>
 
+  <!-- END INNINGS MODAL -->
+  <div id="modal-end-innings" class="fixed inset-0 bg-black bg-opacity-70 z-[80] flex items-center justify-center p-4 backdrop-blur-sm hidden overflow-y-auto">
+    <div class="bg-carlson-beige rounded-xl p-6 w-full max-w-sm shadow-3d border-2 border-carlson-charcoal flex flex-col gap-3 my-auto max-h-[90vh] overflow-y-auto">
+      <h2 class="font-black text-carlson-maroon text-xl uppercase tracking-wide border-b-2 border-carlson-maroon inline-block w-max mb-2">Next Innings Setup</h2>
+      
+      <div>
+         <label class="font-bold text-xs text-carlson-mustard bg-carlson-charcoal px-2 py-0.5 rounded uppercase">Opening Batter 1</label>
+         <select id="innings-b1-select" class="w-full p-2 mt-1 border-2 border-carlson-gray3 rounded font-bold bg-white text-carlson-charcoal mb-2" onchange="document.getElementById('innings-b1-input').value=''"></select>
+         <div class="text-center font-bold text-xs text-carlson-gray2 mb-2">- OR -</div>
+         <input type="text" id="innings-b1-input" class="w-full p-2 border-2 border-carlson-gray3 rounded font-bold bg-white text-carlson-charcoal" placeholder="Type new batter name..." oninput="document.getElementById('innings-b1-select').value=''">
+      </div>
+
+      <hr class="border-carlson-gray3">
+
+      <div>
+         <label class="font-bold text-xs text-carlson-mustard bg-carlson-charcoal px-2 py-0.5 rounded uppercase">Opening Batter 2</label>
+         <select id="innings-b2-select" class="w-full p-2 mt-1 border-2 border-carlson-gray3 rounded font-bold bg-white text-carlson-charcoal mb-2" onchange="document.getElementById('innings-b2-input').value=''"></select>
+         <div class="text-center font-bold text-xs text-carlson-gray2 mb-2">- OR -</div>
+         <input type="text" id="innings-b2-input" class="w-full p-2 border-2 border-carlson-gray3 rounded font-bold bg-white text-carlson-charcoal" placeholder="Type new batter name..." oninput="document.getElementById('innings-b2-select').value=''">
+      </div>
+
+      <hr class="border-carlson-gray3">
+
+      <div>
+         <label class="font-bold text-xs text-white bg-carlson-maroon px-2 py-0.5 rounded uppercase">Opening Bowler</label>
+         <select id="innings-bw-select" class="w-full p-2 mt-1 border-2 border-carlson-gray3 rounded font-bold bg-white text-carlson-charcoal mb-2" onchange="document.getElementById('innings-bw-input').value=''"></select>
+         <div class="text-center font-bold text-xs text-carlson-gray2 mb-2">- OR -</div>
+         <input type="text" id="innings-bw-input" class="w-full p-2 border-2 border-carlson-gray3 rounded font-bold bg-white text-carlson-charcoal" placeholder="Type new bowler name..." oninput="document.getElementById('innings-bw-select').value=''">
+      </div>
+
+      <div class="flex flex-col gap-2 mt-2">
+         <button onclick="confirmEndInnings()" class="w-full bg-carlson-charcoal text-carlson-mustard font-black py-4 rounded shadow-3d uppercase">Start Innings</button>
+         <button onclick="closeModal('modal-end-innings')" class="w-full bg-carlson-gray2 text-white font-bold py-2 rounded shadow-3d uppercase text-xs">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- WICKET MODAL -->
-  <div id="modal-wicket" class="fixed inset-0 bg-black bg-opacity-70 z-[80] flex items-center justify-center p-4 backdrop-blur-sm hidden">
-    <div class="bg-carlson-beige rounded-xl p-6 w-full max-w-sm shadow-3d border-2 border-carlson-charcoal flex flex-col gap-4">
+  <div id="modal-wicket" class="fixed inset-0 bg-black bg-opacity-70 z-[80] flex items-center justify-center p-4 backdrop-blur-sm hidden overflow-y-auto">
+    <div class="bg-carlson-beige rounded-xl p-6 w-full max-w-sm shadow-3d border-2 border-carlson-charcoal flex flex-col gap-4 my-auto">
       <h2 class="font-black text-carlson-red text-xl uppercase tracking-wide border-b-2 border-carlson-red inline-block w-max">Wicket / Retire</h2>
       <div>
          <label class="font-bold text-xs text-carlson-charcoal uppercase block mb-1">How were they out? <span class="normal-case font-normal">(e.g. Caught Smith, Run Out)</span></label>
@@ -298,13 +335,14 @@
       <div class="flex flex-col gap-2 mt-2">
          <button onclick="confirmWicket()" class="w-full bg-carlson-red text-white font-black py-4 rounded shadow-3d uppercase">Confirm Wicket</button>
          <button onclick="promptEndInningsFromModal('modal-wicket')" class="w-full bg-carlson-gray2 text-white font-bold py-2 rounded shadow-3d uppercase text-xs">End Innings Here</button>
+         <button onclick="closeModal('modal-wicket')" class="w-full bg-white border-2 border-carlson-gray3 text-carlson-gray2 font-bold py-2 rounded shadow-sm uppercase text-xs mt-1">Cancel</button>
       </div>
     </div>
   </div>
 
   <!-- OVER MODAL -->
-  <div id="modal-over" class="fixed inset-0 bg-black bg-opacity-70 z-[80] flex items-center justify-center p-4 backdrop-blur-sm hidden">
-    <div class="bg-carlson-beige rounded-xl p-6 w-full max-w-sm shadow-3d border-2 border-carlson-charcoal flex flex-col gap-4">
+  <div id="modal-over" class="fixed inset-0 bg-black bg-opacity-70 z-[80] flex items-center justify-center p-4 backdrop-blur-sm hidden overflow-y-auto">
+    <div class="bg-carlson-beige rounded-xl p-6 w-full max-w-sm shadow-3d border-2 border-carlson-charcoal flex flex-col gap-4 my-auto">
       <h2 class="font-black text-carlson-maroon text-xl uppercase tracking-wide border-b-2 border-carlson-maroon inline-block w-max">End of Over</h2>
       <div>
          <label class="font-bold text-xs text-white bg-carlson-maroon px-2 py-0.5 rounded uppercase">Next Bowler</label>
@@ -318,11 +356,12 @@
       <div class="flex flex-col gap-2 mt-2">
          <button onclick="confirmOver()" class="w-full bg-carlson-charcoal text-carlson-mustard font-black py-4 rounded shadow-3d uppercase">Start Next Over</button>
          <button onclick="promptEndInningsFromModal('modal-over')" class="w-full bg-carlson-gray2 text-white font-bold py-2 rounded shadow-3d uppercase text-xs">End Innings Here</button>
+         <button onclick="closeModal('modal-over')" class="w-full bg-white border-2 border-carlson-gray3 text-carlson-gray2 font-bold py-2 rounded shadow-sm uppercase text-xs mt-1">Cancel</button>
       </div>
     </div>
   </div>
 
-  <!-- GENERIC INPUT MODAL (Custom Runs, Add Player, Innings) -->
+  <!-- GENERIC INPUT MODAL (Custom Runs, Add Player) -->
   <div id="modal-input" class="fixed inset-0 bg-black bg-opacity-70 z-[90] flex items-center justify-center p-4 backdrop-blur-sm hidden">
     <div class="bg-carlson-beige rounded-xl p-6 w-full max-w-sm shadow-3d border-2 border-carlson-charcoal">
       <h2 id="input-modal-title" class="font-black text-carlson-charcoal text-xl uppercase tracking-wide border-b-2 border-carlson-charcoal inline-block w-max mb-4">Input</h2>
@@ -428,10 +467,9 @@
 
     function snapshotHistory() {
       const stateCopy = JSON.parse(JSON.stringify(state));
-      delete stateCopy.history; // Remove the nested history
-      
+      delete stateCopy.history; 
       state.history.push(stateCopy);
-      if (state.history.length > 200) state.history.shift(); // practically unlimited memory
+      if (state.history.length > 200) state.history.shift(); 
     }
 
     // ==========================================
@@ -545,19 +583,46 @@
             state.score = 0; state.wickets = 0; state.balls = 0;
             state.matchLog = []; 
             
-            customInput("Next Innings", [
-                {label: "New Opening Batter 1", placeholder: "Batter 1"},
-                {label: "New Opening Batter 2", placeholder: "Batter 2"},
-                {label: "New Opening Bowler", placeholder: "Bowler 1"}
-            ], (vals) => {
-                const b1 = vals[0] || "Batter 1"; const b2 = vals[1] || "Batter 2"; const bw = vals[2] || "Bowler 1";
-                state.striker = { name: b1, runs: 0, balls: 0, beers: 0 };
-                state.nonStriker = { name: b2, runs: 0, balls: 0, beers: 0 };
-                state.bowler = { name: bw, runs: 0, wickets: 0, balls: 0 };
-                checkAndAddPlayer(b1, 'bat'); checkAndAddPlayer(b2, 'bat'); checkAndAddPlayer(bw, 'bowl');
-                saveState(); renderUI();
-            });
+            // Build dual-input dropdowns for End Innings Modal
+            let batOpts = `<option value="">-- Select from Roster --</option>`;
+            state.battingRoster.forEach(p => { batOpts += `<option value="${p}">${p}</option>`; });
+
+            let bowlOpts = `<option value="">-- Select from Roster --</option>`;
+            state.bowlingRoster.forEach(p => { bowlOpts += `<option value="${p}">${p}</option>`; });
+
+            document.getElementById('innings-b1-select').innerHTML = batOpts;
+            document.getElementById('innings-b2-select').innerHTML = batOpts;
+            document.getElementById('innings-bw-select').innerHTML = bowlOpts;
+
+            document.getElementById('innings-b1-input').value = "";
+            document.getElementById('innings-b2-input').value = "";
+            document.getElementById('innings-bw-input').value = "";
+            
+            openModal('modal-end-innings');
         });
+    }
+    
+    function confirmEndInnings() {
+        const b1Sel = document.getElementById('innings-b1-select').value;
+        const b1Inp = document.getElementById('innings-b1-input').value.trim();
+        const b1 = b1Inp || b1Sel || "Batter 1";
+
+        const b2Sel = document.getElementById('innings-b2-select').value;
+        const b2Inp = document.getElementById('innings-b2-input').value.trim();
+        const b2 = b2Inp || b2Sel || "Batter 2";
+
+        const bwSel = document.getElementById('innings-bw-select').value;
+        const bwInp = document.getElementById('innings-bw-input').value.trim();
+        const bw = bwInp || bwSel || "Bowler 1";
+        
+        state.striker = { name: b1, runs: 0, balls: 0, beers: 0 };
+        state.nonStriker = { name: b2, runs: 0, balls: 0, beers: 0 };
+        state.bowler = { name: bw, runs: 0, wickets: 0, balls: 0 };
+        
+        checkAndAddPlayer(b1, 'bat'); checkAndAddPlayer(b2, 'bat'); checkAndAddPlayer(bw, 'bowl');
+        
+        closeModal('modal-end-innings');
+        saveState(); renderUI();
     }
 
     function promptArchiveGame() {
@@ -577,7 +642,6 @@
                 winner: winner, matchData: state
             });
 
-            // Wipe State Completely
             state = {
                 score: 0, wickets: 0, balls: 0, target: 0,
                 battingTeamName: "", bowlingTeamName: "",
@@ -589,16 +653,10 @@
             };
             saveState();
 
-            // Clear Setup Modal Fields
-            document.getElementById('setup-t1').value = "";
-            document.getElementById('setup-t2').value = "";
-            document.getElementById('setup-btn-1').innerText = "Team 1";
-            document.getElementById('setup-btn-2').innerText = "Team 2";
-            document.getElementById('setup-max-overs').value = "";
-            document.getElementById('setup-max-balls').value = "";
-            document.getElementById('setup-b1').value = "";
-            document.getElementById('setup-b2').value = "";
-            document.getElementById('setup-bw').value = "";
+            document.getElementById('setup-t1').value = ""; document.getElementById('setup-t2').value = "";
+            document.getElementById('setup-btn-1').innerText = "Team 1"; document.getElementById('setup-btn-2').innerText = "Team 2";
+            document.getElementById('setup-max-overs').value = ""; document.getElementById('setup-max-balls').value = "";
+            document.getElementById('setup-b1').value = ""; document.getElementById('setup-b2').value = ""; document.getElementById('setup-bw').value = "";
             
             openModal('modal-setup');
         });
@@ -622,9 +680,7 @@
         const select = document.getElementById('over-next-select');
         let opts = `<option value="">-- Select from Roster --</option>`;
         state.bowlingRoster.forEach(p => {
-            if (p !== state.bowler.name) {
-                opts += `<option value="${p}">${p}</option>`;
-            }
+            if (p !== state.bowler.name) { opts += `<option value="${p}">${p}</option>`; }
         });
         select.innerHTML = opts;
         select.value = "";
@@ -641,7 +697,6 @@
         const selVal = document.getElementById('over-next-select').value;
         const inputVal = document.getElementById('over-next-input').value.trim();
         
-        // Prioritize what they typed over the dropdown
         let newBowler = inputVal || selVal || document.getElementById('over-next-input').placeholder;
         
         state.bowler = { name: newBowler, runs: 0, wickets: 0, balls: 0 };
@@ -713,7 +768,6 @@
         const selVal = document.getElementById('wicket-next-select').value;
         const inputVal = document.getElementById('wicket-next-input').value.trim();
         
-        // Prioritize what they typed over the dropdown
         let newBatter = inputVal || selVal || document.getElementById('wicket-next-input').placeholder;
         
         state.striker = { name: newBatter, runs: 0, balls: 0, beers: 0 };
@@ -728,7 +782,7 @@
         const prevHistory = state.history; 
         const previousState = prevHistory.pop();
         state = previousState; 
-        state.history = prevHistory; // Must manually restore history array to prevent wiping it
+        state.history = prevHistory; 
         saveState(); renderUI(); 
       } 
       else { customAlert("Nothing left to rewind!"); }
