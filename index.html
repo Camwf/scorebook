@@ -13,6 +13,7 @@
 
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -35,29 +36,48 @@
   </script>
 
   <style>
-    body { background-color: #e3ded1; color: #1c1c1c; font-family: ui-sans-serif, system-ui, sans-serif; touch-action: manipulation; }
+    body { font-family: ui-sans-serif, system-ui, sans-serif; touch-action: manipulation; }
     .shadow-3d { box-shadow: 0 4px 0 #1c1c1c; transition: all 0.1s; border: 2px solid #1c1c1c; }
     .shadow-3d:active { transform: translateY(4px); box-shadow: 0 0px 0 #1c1c1c; }
+    .dark .shadow-3d { box-shadow: 0 4px 0 #000; border: 2px solid #000; }
+    .dark .shadow-3d:active { box-shadow: 0 0px 0 #000; }
     .drag-handle { cursor: grab; }
     .drag-handle:active { cursor: grabbing; }
   </style>
-</head>
-<body class="min-h-screen p-2 md:p-4 flex flex-col items-center">
 
-  <div id="app-container" class="w-full max-w-md flex flex-col gap-4 pb-20">
+  <script>
+    // Initialize Theme
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+</head>
+<body class="min-h-screen p-2 md:p-4 flex flex-col items-center bg-carlson-beige dark:bg-carlson-gray1 text-carlson-charcoal dark:text-carlson-beige transition-colors duration-200">
+
+  <div id="app-container" class="w-full max-w-md flex flex-col gap-4 pb-20 relative">
     
+    <!-- HEADER BAR -->
+    <div class="flex justify-between items-center mb-2 px-2">
+      <h1 class="font-black text-carlson-maroon dark:text-carlson-mustard uppercase tracking-wider text-sm">Fremantle Scorebook</h1>
+      <button onclick="toggleSettingsMenu()" class="bg-white dark:bg-carlson-charcoal border-2 border-carlson-charcoal dark:border-black rounded-full w-10 h-10 flex items-center justify-center shadow-3d text-xl pb-1">
+        ⚙️
+      </button>
+    </div>
+
     <!-- 1. OVERVIEW SECTION -->
-    <div class="bg-white rounded-xl p-4 shadow-3d relative" data-id="overview">
+    <div class="bg-white dark:bg-carlson-charcoal rounded-xl p-4 shadow-3d relative transition-colors duration-200" data-id="overview">
       <div class="drag-handle absolute top-2 right-2 text-carlson-gray3 p-2">⋮⋮</div>
       <div class="flex justify-between items-center mb-2 pr-6">
-        <input type="text" id="batting-team" class="font-bold text-lg bg-transparent border-b border-dashed border-carlson-gray3 w-1/2" value="Swan Draught Dodgers">
-        <span class="text-sm font-bold text-carlson-gray2">v</span>
-        <input type="text" id="bowling-team" class="font-bold text-lg bg-transparent border-b border-dashed border-carlson-gray3 w-1/2 text-right" value="Western Weekend Warriors">
+        <input type="text" id="batting-team" class="font-bold text-lg bg-transparent border-b border-dashed border-carlson-gray3 w-1/2 dark:text-white" value="">
+        <span class="text-sm font-bold text-carlson-gray2 dark:text-carlson-gray3">v</span>
+        <input type="text" id="bowling-team" class="font-bold text-lg bg-transparent border-b border-dashed border-carlson-gray3 w-1/2 text-right dark:text-white" value="">
       </div>
       <div class="flex justify-between items-end">
         <div>
-          <div class="text-5xl font-black text-carlson-maroon tracking-tighter" id="main-score">0<span class="text-3xl text-carlson-charcoal">/0</span></div>
-          <div class="text-sm font-bold text-carlson-gray2 mt-1">Overs: <span id="main-overs" class="text-carlson-charcoal">0.0</span></div>
+          <div class="text-5xl font-black text-carlson-maroon tracking-tighter" id="main-score">0<span class="text-3xl text-carlson-charcoal dark:text-carlson-gray3">/0</span></div>
+          <div class="text-sm font-bold text-carlson-gray2 dark:text-carlson-gray3 mt-1">Overs: <span id="main-overs" class="text-carlson-charcoal dark:text-white">0.0</span></div>
           <div id="target-display" class="text-sm font-bold text-carlson-maroon mt-1 hidden">Target: <span id="main-target">0</span></div>
         </div>
         <button onclick="toggleScorecard()" class="bg-carlson-blue text-carlson-charcoal font-bold px-4 py-2 rounded shadow-3d text-sm">📊 Scorecard</button>
@@ -65,97 +85,139 @@
     </div>
 
     <!-- 2. PITCH SECTION -->
-    <div class="bg-white rounded-xl p-4 shadow-3d relative" data-id="pitch">
+    <div class="bg-white dark:bg-carlson-charcoal rounded-xl p-4 shadow-3d relative transition-colors duration-200" data-id="pitch">
       <div class="drag-handle absolute top-2 right-2 text-carlson-gray3 p-2">⋮⋮</div>
-      <h3 class="font-black text-carlson-charcoal mb-3 uppercase tracking-wide border-b-2 border-carlson-charcoal inline-block">The Pitch</h3>
+      <h3 class="font-black text-carlson-charcoal dark:text-white mb-3 uppercase tracking-wide border-b-2 border-carlson-charcoal dark:border-carlson-gray3 inline-block">The Pitch</h3>
       
       <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-center mb-4">
         <!-- Striker -->
-        <div id="striker-card" class="border-4 border-carlson-mustard rounded-lg p-2 bg-white relative">
-          <div class="absolute -top-3 left-2 bg-carlson-mustard text-carlson-charcoal text-xs font-black px-2 py-0.5 rounded border-2 border-carlson-charcoal">🏏 FACING</div>
-          <input type="text" id="striker-name" class="font-bold w-full bg-transparent mt-2 truncate" value="" placeholder="Batter 1">
-          <div class="text-sm font-bold mt-1 text-carlson-gray2"><span id="striker-runs">0</span> (<span id="striker-balls">0</span>)</div>
+        <div id="striker-card" class="border-4 border-carlson-mustard rounded-lg p-2 bg-white dark:bg-carlson-gray1 relative transition-colors duration-200">
+          <div class="absolute -top-3 left-2 bg-carlson-mustard text-carlson-charcoal text-xs font-black px-2 py-0.5 rounded border-2 border-carlson-charcoal dark:border-black">🏏 FACING</div>
+          <input type="text" id="striker-name" class="font-bold w-full bg-transparent mt-2 truncate dark:text-white" value="" placeholder="Batter 1">
+          <div class="text-sm font-bold mt-1 text-carlson-gray2 dark:text-carlson-beige"><span id="striker-runs">0</span> (<span id="striker-balls">0</span>)</div>
         </div>
         
         <!-- Swap Button -->
-        <button onclick="swapBatters()" class="bg-white border-2 border-carlson-blue rounded-full w-10 h-10 flex items-center justify-center shadow-3d -mt-2">
+        <button onclick="swapBatters()" class="bg-white dark:bg-carlson-charcoal border-2 border-carlson-blue rounded-full w-10 h-10 flex items-center justify-center shadow-3d -mt-2">
           🔄
         </button>
 
         <!-- Non-Striker -->
-        <div id="nonstriker-card" class="border-2 border-carlson-gray3 rounded-lg p-2 bg-carlson-beige opacity-80">
-          <input type="text" id="nonstriker-name" class="font-bold w-full bg-transparent mt-2 truncate" value="" placeholder="Batter 2">
-          <div class="text-sm font-bold mt-1 text-carlson-gray2"><span id="nonstriker-runs">0</span> (<span id="nonstriker-balls">0</span>)</div>
+        <div id="nonstriker-card" class="border-2 border-carlson-gray3 rounded-lg p-2 bg-carlson-beige dark:bg-carlson-gray2 opacity-80 transition-colors duration-200">
+          <input type="text" id="nonstriker-name" class="font-bold w-full bg-transparent mt-2 truncate dark:text-white" value="" placeholder="Batter 2">
+          <div class="text-sm font-bold mt-1 text-carlson-gray2 dark:text-carlson-beige"><span id="nonstriker-runs">0</span> (<span id="nonstriker-balls">0</span>)</div>
         </div>
       </div>
 
       <!-- Bowler -->
-      <div class="border-2 border-carlson-maroon rounded-lg p-2 bg-white flex justify-between items-center">
+      <div class="border-2 border-carlson-maroon rounded-lg p-2 bg-white dark:bg-carlson-gray1 flex justify-between items-center transition-colors duration-200">
         <div class="w-2/3">
           <div class="text-xs font-black text-carlson-maroon uppercase mb-1">Current Bowler 🔴</div>
-          <input type="text" id="bowler-name" class="font-bold w-full bg-transparent truncate" value="" placeholder="Bowler">
+          <input type="text" id="bowler-name" class="font-bold w-full bg-transparent truncate dark:text-white" value="" placeholder="Bowler">
         </div>
         <div class="text-right">
-          <div class="text-sm font-bold text-carlson-gray2"><span id="bowler-overs">0.0</span> O</div>
-          <div class="text-sm font-bold text-carlson-charcoal"><span id="bowler-runs">0</span> / <span id="bowler-wickets">0</span></div>
+          <div class="text-sm font-bold text-carlson-gray2 dark:text-carlson-beige"><span id="bowler-overs">0.0</span> O</div>
+          <div class="text-sm font-bold text-carlson-charcoal dark:text-white"><span id="bowler-runs">0</span> / <span id="bowler-wickets">0</span></div>
         </div>
       </div>
     </div>
 
     <!-- 3. SCORE SECTION -->
-    <div class="bg-white rounded-xl p-4 shadow-3d relative" data-id="score">
+    <div class="bg-white dark:bg-carlson-charcoal rounded-xl p-4 shadow-3d relative transition-colors duration-200" data-id="score">
       <div class="drag-handle absolute top-2 right-2 text-carlson-gray3 p-2">⋮⋮</div>
-      <h3 class="font-black text-carlson-charcoal mb-3 uppercase tracking-wide border-b-2 border-carlson-charcoal inline-block">Score Input</h3>
+      <h3 class="font-black text-carlson-charcoal dark:text-white mb-3 uppercase tracking-wide border-b-2 border-carlson-charcoal dark:border-carlson-gray3 inline-block">Score Input</h3>
       
       <div class="grid grid-cols-4 gap-2 mb-2">
-        <button onclick="addRun(0)" class="bg-carlson-beige font-black py-4 rounded shadow-3d text-lg">0</button>
-        <button onclick="addRun(1)" class="bg-carlson-beige font-black py-4 rounded shadow-3d text-lg">1</button>
-        <button onclick="addRun(2)" class="bg-carlson-beige font-black py-4 rounded shadow-3d text-lg">2</button>
-        <button onclick="addRun(3)" class="bg-carlson-beige font-black py-4 rounded shadow-3d text-lg">3</button>
-        <button onclick="addRun(4)" class="bg-carlson-mustard font-black py-4 rounded shadow-3d text-lg">4</button>
-        <button onclick="addRun(5)" class="bg-carlson-beige font-black py-4 rounded shadow-3d text-lg">5</button>
-        <button onclick="addRun(6)" class="bg-carlson-mustard font-black py-4 rounded shadow-3d text-lg">6</button>
-        <button onclick="promptCustomRun()" class="bg-carlson-gray3 text-white font-black py-4 rounded shadow-3d text-sm leading-tight">CUST<br>#</button>
+        <button onclick="addRun(0)" class="bg-carlson-beige dark:bg-carlson-gray2 dark:text-white font-black py-4 rounded shadow-3d text-lg transition-colors duration-200">0</button>
+        <button onclick="addRun(1)" class="bg-carlson-beige dark:bg-carlson-gray2 dark:text-white font-black py-4 rounded shadow-3d text-lg transition-colors duration-200">1</button>
+        <button onclick="addRun(2)" class="bg-carlson-beige dark:bg-carlson-gray2 dark:text-white font-black py-4 rounded shadow-3d text-lg transition-colors duration-200">2</button>
+        <button onclick="addRun(3)" class="bg-carlson-beige dark:bg-carlson-gray2 dark:text-white font-black py-4 rounded shadow-3d text-lg transition-colors duration-200">3</button>
+        <button onclick="addRun(4)" class="bg-carlson-mustard text-carlson-charcoal font-black py-4 rounded shadow-3d text-lg transition-colors duration-200">4</button>
+        <button onclick="addRun(5)" class="bg-carlson-beige dark:bg-carlson-gray2 dark:text-white font-black py-4 rounded shadow-3d text-lg transition-colors duration-200">5</button>
+        <button onclick="addRun(6)" class="bg-carlson-mustard text-carlson-charcoal font-black py-4 rounded shadow-3d text-lg transition-colors duration-200">6</button>
+        <button onclick="promptCustomRun()" class="bg-carlson-gray3 text-white font-black py-4 rounded shadow-3d text-sm leading-tight transition-colors duration-200">CUST<br>#</button>
       </div>
       <div class="grid grid-cols-4 gap-2 mb-4">
-        <button onclick="addExtra('wd')" class="bg-carlson-gray2 text-white font-black py-3 rounded shadow-3d">WD</button>
-        <button onclick="addExtra('nb')" class="bg-carlson-gray2 text-white font-black py-3 rounded shadow-3d">NB</button>
-        <button onclick="addExtra('b')" class="bg-carlson-gray2 text-white font-black py-3 rounded shadow-3d">B</button>
-        <button onclick="addExtra('lb')" class="bg-carlson-gray2 text-white font-black py-3 rounded shadow-3d">LB</button>
+        <button onclick="addExtra('wd')" class="bg-carlson-gray2 text-white font-black py-3 rounded shadow-3d transition-colors duration-200">WD</button>
+        <button onclick="addExtra('nb')" class="bg-carlson-gray2 text-white font-black py-3 rounded shadow-3d transition-colors duration-200">NB</button>
+        <button onclick="addExtra('b')" class="bg-carlson-gray2 text-white font-black py-3 rounded shadow-3d transition-colors duration-200">B</button>
+        <button onclick="addExtra('lb')" class="bg-carlson-gray2 text-white font-black py-3 rounded shadow-3d transition-colors duration-200">LB</button>
       </div>
       
       <div class="grid grid-cols-2 gap-2">
-        <button onclick="undoLast()" class="bg-white border-2 border-carlson-pink text-carlson-charcoal font-black py-4 rounded shadow-3d uppercase">Rewind ↺</button>
-        <button onclick="triggerWicket()" class="bg-carlson-red text-white font-black py-4 rounded shadow-3d uppercase">Wicket / Out</button>
+        <button onclick="undoLast()" class="bg-white dark:bg-carlson-gray1 border-2 border-carlson-pink text-carlson-charcoal dark:text-white font-black py-4 rounded shadow-3d uppercase transition-colors duration-200">Rewind ↺</button>
+        <button onclick="triggerWicket()" class="bg-carlson-red text-white font-black py-4 rounded shadow-3d uppercase transition-colors duration-200">Wicket / Retire</button>
       </div>
     </div>
 
     <!-- 4. TEAMS & ROSTERS SECTION -->
-    <div class="bg-white rounded-xl p-4 shadow-3d relative" data-id="teams">
+    <div class="bg-white dark:bg-carlson-charcoal rounded-xl p-4 shadow-3d relative transition-colors duration-200" data-id="teams">
       <div class="drag-handle absolute top-2 right-2 text-carlson-gray3 p-2">⋮⋮</div>
-      <h3 class="font-black text-carlson-charcoal mb-3 uppercase tracking-wide border-b-2 border-carlson-charcoal inline-block">Team Rosters</h3>
+      <h3 class="font-black text-carlson-charcoal dark:text-white mb-3 uppercase tracking-wide border-b-2 border-carlson-charcoal dark:border-carlson-gray3 inline-block">Team Rosters</h3>
       
       <div class="grid grid-cols-2 gap-4 mb-4">
-        <!-- Batting Roster -->
         <div>
-          <div class="font-bold text-sm text-carlson-mustard bg-carlson-charcoal px-2 py-1 rounded-t">🏏 Batting</div>
-          <div id="batting-roster-list" class="text-sm border-x border-b border-carlson-gray3 p-2 h-32 overflow-y-auto bg-carlson-beige rounded-b flex flex-col gap-1"></div>
-          <button onclick="addManualPlayer('bat')" class="mt-2 text-xs font-bold text-carlson-blue underline uppercase">+ Add Batter</button>
+          <div class="font-bold text-sm text-carlson-mustard bg-carlson-charcoal dark:bg-black px-2 py-1 rounded-t">🏏 Batting</div>
+          <div id="batting-roster-list" class="text-sm border-x border-b border-carlson-gray3 p-2 h-32 overflow-y-auto bg-carlson-beige dark:bg-carlson-gray2 rounded-b flex flex-col gap-1 transition-colors duration-200"></div>
+          <button onclick="addManualPlayer('bat')" class="mt-2 text-xs font-bold text-carlson-blue dark:text-carlson-blue underline uppercase">+ Add Batter</button>
         </div>
-        <!-- Bowling Roster -->
         <div>
           <div class="font-bold text-sm text-white bg-carlson-maroon px-2 py-1 rounded-t">🔴 Bowling</div>
-          <div id="bowling-roster-list" class="text-sm border-x border-b border-carlson-gray3 p-2 h-32 overflow-y-auto bg-carlson-beige rounded-b flex flex-col gap-1"></div>
-          <button onclick="addManualPlayer('bowl')" class="mt-2 text-xs font-bold text-carlson-maroon underline uppercase">+ Add Bowler</button>
+          <div id="bowling-roster-list" class="text-sm border-x border-b border-carlson-gray3 p-2 h-32 overflow-y-auto bg-carlson-beige dark:bg-carlson-gray2 rounded-b flex flex-col gap-1 transition-colors duration-200"></div>
+          <button onclick="addManualPlayer('bowl')" class="mt-2 text-xs font-bold text-carlson-maroon dark:text-carlson-pink underline uppercase">+ Add Bowler</button>
         </div>
       </div>
       
       <div class="grid grid-cols-2 gap-2">
-        <button onclick="endInnings()" class="bg-carlson-charcoal text-carlson-mustard font-black py-4 rounded shadow-3d uppercase tracking-wider text-xs">Swap Innings</button>
-        <button onclick="archiveAndReset()" class="bg-carlson-gray2 text-white font-black py-4 rounded shadow-3d uppercase tracking-wider text-xs">Reset Game</button>
+        <button onclick="endInnings()" class="bg-carlson-charcoal dark:bg-carlson-gray1 text-carlson-mustard font-black py-4 rounded shadow-3d uppercase tracking-wider text-xs border border-carlson-charcoal dark:border-black transition-colors duration-200">Swap Innings</button>
+        <button onclick="archiveAndReset()" class="bg-carlson-gray2 dark:bg-carlson-gray3 text-white font-black py-4 rounded shadow-3d uppercase tracking-wider text-xs border border-carlson-charcoal dark:border-black transition-colors duration-200">Reset Game</button>
       </div>
     </div>
 
+    <!-- 5. ARCHIVED GAMES SECTION -->
+    <div class="bg-white dark:bg-carlson-charcoal rounded-xl p-4 shadow-3d relative transition-colors duration-200" data-id="archive">
+      <div class="drag-handle absolute top-2 right-2 text-carlson-gray3 p-2">⋮⋮</div>
+      <h3 class="font-black text-carlson-charcoal dark:text-white mb-3 uppercase tracking-wide border-b-2 border-carlson-charcoal dark:border-carlson-gray3 inline-block">Past Matches</h3>
+      <div id="archives-list" class="flex flex-col gap-2">
+        <p class="text-sm text-carlson-gray2 dark:text-carlson-gray3 italic">No past matches found.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SETTINGS MODAL (HIDDEN BY DEFAULT) -->
+  <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+    <div class="bg-carlson-beige dark:bg-carlson-gray1 rounded-xl p-6 w-full max-w-sm shadow-3d border-2 border-carlson-charcoal dark:border-black relative">
+      <button onclick="toggleSettingsMenu()" class="absolute top-3 right-3 text-carlson-maroon dark:text-carlson-pink font-black text-xl w-8 h-8 rounded border-2 border-carlson-maroon dark:border-carlson-pink flex items-center justify-center bg-white dark:bg-carlson-charcoal shadow-3d pb-1">X</button>
+      <h2 class="font-black text-carlson-charcoal dark:text-white text-xl mb-4 uppercase tracking-wide border-b-2 border-carlson-charcoal dark:border-white inline-block">Settings</h2>
+      
+      <div class="flex flex-col gap-4">
+        <!-- Theme Toggle -->
+        <div class="flex justify-between items-center bg-white dark:bg-carlson-charcoal p-3 rounded border border-carlson-gray3 shadow-sm transition-colors duration-200">
+          <label class="font-bold text-sm text-carlson-charcoal dark:text-white">App Theme</label>
+          <button onclick="toggleTheme()" id="theme-toggle-btn" class="bg-carlson-blue text-carlson-charcoal font-black px-4 py-2 rounded shadow-3d text-xs uppercase tracking-wider">
+            Toggle Mode
+          </button>
+        </div>
+
+        <!-- Match Limits -->
+        <div class="bg-white dark:bg-carlson-charcoal p-3 rounded border border-carlson-gray3 shadow-sm transition-colors duration-200 flex flex-col gap-3">
+          <h4 class="font-black text-carlson-maroon text-xs uppercase tracking-wider mb-1">Match Limits</h4>
+          
+          <div class="flex justify-between items-center">
+            <label class="font-bold text-sm text-carlson-charcoal dark:text-carlson-beige w-2/3">Max Overs per Innings:</label>
+            <input type="number" id="setting-max-overs" class="w-1/3 bg-carlson-beige dark:bg-carlson-gray2 dark:text-white font-bold p-1 rounded border border-carlson-gray3 text-center" placeholder="e.g. 20" onchange="updateSettings()">
+          </div>
+
+          <div class="flex justify-between items-center">
+            <label class="font-bold text-sm text-carlson-charcoal dark:text-carlson-beige w-2/3">Retire Batter After X Balls <span class="text-xs font-normal text-carlson-gray3 block">(0 = unlimited)</span></label>
+            <input type="number" id="setting-max-balls" class="w-1/3 bg-carlson-beige dark:bg-carlson-gray2 dark:text-white font-bold p-1 rounded border border-carlson-gray3 text-center" placeholder="e.g. 30" onchange="updateSettings()">
+          </div>
+        </div>
+        
+        <button onclick="toggleSettingsMenu()" class="w-full mt-2 bg-carlson-charcoal dark:bg-black text-carlson-mustard font-black py-4 rounded shadow-3d uppercase tracking-wider text-sm transition-colors duration-200">Save & Close</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -176,9 +238,10 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const matchRef = db.ref('currentMatch');
+    const archiveDbRef = db.ref('archivedMatches');
 
     // ==========================================
-    // 2. STATE MANAGEMENT
+    // 2. STATE MANAGEMENT & SETTINGS
     // ==========================================
     let state = {
       score: 0, wickets: 0, balls: 0, target: 0,
@@ -189,6 +252,8 @@
       bowler: { name: "", runs: 0, wickets: 0, balls: 0 },
       battingRoster: [],
       bowlingRoster: [],
+      matchLog: [],
+      settings: { maxOvers: 20, maxBallsPerBatter: 0 },
       history: []
     };
 
@@ -201,12 +266,18 @@
         state = { ...state, ...data }; 
         if (!state.battingRoster) state.battingRoster = [];
         if (!state.bowlingRoster) state.bowlingRoster = [];
+        if (!state.matchLog) state.matchLog = [];
+        if (!state.settings) state.settings = { maxOvers: 20, maxBallsPerBatter: 0 };
         renderUI();
         isUpdatingFromFirebase = false;
       } else {
-        // Database is completely empty, prompt the user instantly
         promptInitialSetup();
       }
+    });
+
+    archiveDbRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      renderArchives(data);
     });
 
     function saveState() {
@@ -233,10 +304,35 @@
       
       state.battingRoster = [b1, b2];
       state.bowlingRoster = [bw];
+      state.matchLog = [];
       
       saveState();
       renderUI();
     }
+
+    // Modal & Theme Toggles
+    function toggleSettingsMenu() {
+      document.getElementById('settings-modal').classList.toggle('hidden');
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+      const isDark = document.documentElement.classList.contains('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      updateThemeButtonText();
+    }
+
+    function updateThemeButtonText() {
+      const btn = document.getElementById('theme-toggle-btn');
+      if (document.documentElement.classList.contains('dark')) {
+        btn.innerText = "Switch to Light Mode";
+      } else {
+        btn.innerText = "Switch to Dark Mode";
+      }
+    }
+    
+    // Set initial button text based on pre-load script
+    document.addEventListener("DOMContentLoaded", updateThemeButtonText);
 
     // ==========================================
     // 3. CORE CRICKET LOGIC
@@ -251,6 +347,7 @@
       state.bowler.balls += 1;
       
       if (runs % 2 !== 0) swapLogic();
+      checkLimits();
       checkOver();
       saveState();
       renderUI();
@@ -266,6 +363,7 @@
         state.striker.balls += 1;
         state.bowler.balls += 1;
       }
+      checkLimits();
       checkOver();
       saveState();
       renderUI();
@@ -292,12 +390,22 @@
       state.bowler.wickets += 1;
       state.bowler.balls += 1;
       
-      const newBatter = prompt("Wicket! Enter new batter's name:", "Batter " + (state.wickets + 2));
+      const dismissalMethod = prompt("How were they out/retired? (e.g. Bowled, Caught Smith, Run out, Retired)", "Bowled") || "Out";
+      
+      state.matchLog.push({
+        batter: state.striker.name,
+        runs: state.striker.runs,
+        balls: state.striker.balls,
+        method: dismissalMethod
+      });
+      
+      const newBatter = prompt("Enter new batter's name:", "Batter " + (state.wickets + 2));
       if (newBatter) {
         state.striker = { name: newBatter, runs: 0, balls: 0 };
         checkAndAddPlayer(newBatter, 'bat');
       }
       
+      checkLimits();
       checkOver();
       saveState();
       renderUI();
@@ -326,13 +434,24 @@
       }
     }
 
+    function checkLimits() {
+      if (state.settings.maxOvers > 0 && state.balls >= state.settings.maxOvers * 6) {
+        setTimeout(() => alert("⚠️ Innings Overs Limit Reached!"), 200);
+      }
+      if (state.settings.maxBallsPerBatter > 0) {
+        if (state.striker.balls >= state.settings.maxBallsPerBatter) {
+          setTimeout(() => alert(`⚠️ ${state.striker.name} has reached the max ball limit (${state.settings.maxBallsPerBatter}) and must retire!`), 200);
+        }
+      }
+    }
+
     function promptCustomRun() {
       const r = parseInt(prompt("Enter custom runs (e.g. 7 for overthrows):", "0"));
       if (!isNaN(r)) addRun(r);
     }
 
     // ==========================================
-    // 4. ROSTER & INNINGS LOGIC
+    // 4. ROSTER & SETTINGS LOGIC
     // ==========================================
     function checkAndAddPlayer(name, role) {
       if (!name || name.trim() === "") return;
@@ -351,7 +470,6 @@
 
     function updateRosterName(role, index, newName, oldName) {
       if (!newName || newName.trim() === "") return;
-      
       if (role === 'bat') {
         state.battingRoster[index] = newName;
         if (state.striker.name === oldName) state.striker.name = newName;
@@ -360,9 +478,14 @@
         state.bowlingRoster[index] = newName;
         if (state.bowler.name === oldName) state.bowler.name = newName;
       }
-      
       saveState();
       renderUI();
+    }
+
+    function updateSettings() {
+      state.settings.maxOvers = parseInt(document.getElementById('setting-max-overs').value) || 0;
+      state.settings.maxBallsPerBatter = parseInt(document.getElementById('setting-max-balls').value) || 0;
+      saveState();
     }
 
     function endInnings() {
@@ -381,6 +504,7 @@
       state.score = 0;
       state.wickets = 0;
       state.balls = 0;
+      state.matchLog = []; 
       
       const b1 = prompt("Enter opening Batter 1:", "Batter 1") || "Batter 1";
       const b2 = prompt("Enter opening Batter 2:", "Batter 2") || "Batter 2";
@@ -403,7 +527,11 @@
 
       const archiveRef = db.ref('archivedMatches').push();
       archiveRef.set({
-        timestamp: new Date().toISOString(),
+        date: new Date().toLocaleDateString(),
+        teamA: state.battingTeamName,
+        teamB: state.bowlingTeamName,
+        score: `${state.score}/${state.wickets}`,
+        overs: `${Math.floor(state.balls / 6)}.${state.balls % 6}`,
         matchData: state
       });
 
@@ -416,6 +544,8 @@
         bowler: { name: "", runs: 0, wickets: 0, balls: 0 },
         battingRoster: [],
         bowlingRoster: [],
+        matchLog: [],
+        settings: state.settings,
         history: []
       };
       
@@ -423,11 +553,17 @@
       alert("Match archived successfully. Board reset.");
     }
 
+    function deleteArchive(id) {
+      if(confirm("Permanently delete this archived match?")) {
+        db.ref('archivedMatches/' + id).remove();
+      }
+    }
+
     // ==========================================
     // 5. UI RENDERING & DRAG/DROP
     // ==========================================
     function renderUI() {
-      document.getElementById('main-score').innerHTML = `${state.score}<span class="text-3xl text-carlson-charcoal">/${state.wickets}</span>`;
+      document.getElementById('main-score').innerHTML = `${state.score}<span class="text-3xl text-carlson-charcoal dark:text-carlson-gray3">/${state.wickets}</span>`;
       document.getElementById('main-overs').innerText = `${Math.floor(state.balls / 6)}.${state.balls % 6}`;
       
       const targetEl = document.getElementById('target-display');
@@ -438,8 +574,10 @@
         targetEl.classList.add('hidden');
       }
 
-      document.getElementById('batting-team').value = state.battingTeamName || "Swan Draught Dodgers";
-      document.getElementById('bowling-team').value = state.bowlingTeamName || "Western Weekend Warriors";
+      document.getElementById('batting-team').value = state.battingTeamName || "";
+      document.getElementById('bowling-team').value = state.bowlingTeamName || "";
+      document.getElementById('setting-max-overs').value = state.settings.maxOvers || "";
+      document.getElementById('setting-max-balls').value = state.settings.maxBallsPerBatter || "";
 
       document.getElementById('striker-name').value = state.striker.name;
       document.getElementById('striker-runs').innerText = state.striker.runs;
@@ -455,12 +593,34 @@
       document.getElementById('bowler-overs').innerText = `${Math.floor(state.bowler.balls / 6)}.${state.bowler.balls % 6}`;
 
       document.getElementById('batting-roster-list').innerHTML = (state.battingRoster || []).map((p, index) => 
-        `<input type="text" class="w-full bg-transparent font-bold border-b border-dashed border-carlson-gray3 focus:outline-none truncate" value="${p}" onchange="updateRosterName('bat', ${index}, this.value, '${p}')">`
+        `<input type="text" class="w-full bg-transparent font-bold border-b border-dashed border-carlson-gray3 dark:text-white focus:outline-none truncate" value="${p}" onchange="updateRosterName('bat', ${index}, this.value, '${p}')">`
       ).join('');
       
       document.getElementById('bowling-roster-list').innerHTML = (state.bowlingRoster || []).map((p, index) => 
-        `<input type="text" class="w-full bg-transparent font-bold border-b border-dashed border-carlson-gray3 focus:outline-none truncate" value="${p}" onchange="updateRosterName('bowl', ${index}, this.value, '${p}')">`
+        `<input type="text" class="w-full bg-transparent font-bold border-b border-dashed border-carlson-gray3 dark:text-white focus:outline-none truncate" value="${p}" onchange="updateRosterName('bowl', ${index}, this.value, '${p}')">`
       ).join('');
+    }
+
+    function renderArchives(data) {
+      const list = document.getElementById('archives-list');
+      if (!data) {
+        list.innerHTML = `<p class="text-sm text-carlson-gray2 dark:text-carlson-gray3 italic">No past matches found.</p>`;
+        return;
+      }
+      
+      list.innerHTML = Object.keys(data).reverse().map(id => {
+        const match = data[id];
+        return `
+          <div class="bg-carlson-beige dark:bg-carlson-gray2 p-3 rounded border border-carlson-gray3 flex justify-between items-center shadow-sm transition-colors duration-200">
+            <div>
+              <div class="text-xs text-carlson-gray2 dark:text-carlson-gray3 font-bold mb-1">${match.date}</div>
+              <div class="text-sm font-black text-carlson-charcoal dark:text-white">${match.teamA} <span class="text-carlson-gray2 dark:text-carlson-gray3 font-normal">v</span> ${match.teamB}</div>
+              <div class="text-carlson-maroon dark:text-carlson-mustard font-bold text-sm">Score: ${match.score} <span class="text-xs font-normal text-carlson-gray2 dark:text-carlson-gray3">(${match.overs} Overs)</span></div>
+            </div>
+            <button onclick="deleteArchive('${id}')" class="bg-white dark:bg-carlson-charcoal border-2 border-carlson-red text-carlson-red dark:text-carlson-pink dark:border-carlson-pink font-black w-8 h-8 rounded flex items-center justify-center shadow-3d pb-0.5">X</button>
+          </div>
+        `;
+      }).join('');
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -469,6 +629,7 @@
       
       if (savedOrder) {
         savedOrder.forEach(id => {
+          // ensure we only try to append elements that still exist (prevents crash from old 'settings' id)
           const el = document.querySelector(`[data-id="${id}"]`);
           if (el) container.appendChild(el);
         });
@@ -478,7 +639,7 @@
         handle: '.drag-handle',
         animation: 150,
         onEnd: function () {
-          const order = Array.from(container.children).map(el => el.getAttribute('data-id'));
+          const order = Array.from(container.children).map(el => el.getAttribute('data-id')).filter(id => id);
           localStorage.setItem('layoutOrder', JSON.stringify(order));
         }
       });
@@ -515,7 +676,18 @@
     });
 
     function toggleScorecard() {
-      alert("Scorecard summary:\n" + state.score + "/" + state.wickets + " (" + Math.floor(state.balls / 6) + "." + (state.balls % 6) + " Overs)");
+      let msg = `SCORECARD SUMMARY\n${state.score}/${state.wickets} (${Math.floor(state.balls / 6)}.${state.balls % 6} Overs)\n\n`;
+      msg += `CURRENT BATTERS:\n- ${state.striker.name}: ${state.striker.runs} (${state.striker.balls})\n- ${state.nonStriker.name}: ${state.nonStriker.runs} (${state.nonStriker.balls})\n\n`;
+      
+      if (state.matchLog && state.matchLog.length > 0) {
+        msg += `FALL OF WICKETS / RETIREMENTS:\n`;
+        state.matchLog.forEach(log => {
+          msg += `- ${log.batter} (${log.runs} runs from ${log.balls} balls) - ${log.method}\n`;
+        });
+      } else {
+        msg += `No wickets yet.`;
+      }
+      alert(msg);
     }
   </script>
 </body>
