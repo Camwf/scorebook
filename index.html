@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Fremantle Casual Cricket League Scorebook</title>
+  <title>Scorebook</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   
-  <!-- Firebase SDKs (Compat version for simple HTML drop-in) -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
@@ -58,6 +58,7 @@
         <div>
           <div class="text-5xl font-black text-carlson-maroon tracking-tighter" id="main-score">0<span class="text-3xl text-carlson-charcoal">/0</span></div>
           <div class="text-sm font-bold text-carlson-gray2 mt-1">Overs: <span id="main-overs" class="text-carlson-charcoal">0.0</span></div>
+          <div id="target-display" class="text-sm font-bold text-carlson-maroon mt-1 hidden">Target: <span id="main-target">0</span></div>
         </div>
         <button onclick="toggleScorecard()" class="bg-carlson-blue text-carlson-charcoal font-bold px-4 py-2 rounded shadow-3d text-sm">📊 Scorecard</button>
       </div>
@@ -68,7 +69,6 @@
       <div class="drag-handle absolute top-2 right-2 text-carlson-gray3 p-2">⋮⋮</div>
       <h3 class="font-black text-carlson-charcoal mb-3 uppercase tracking-wide border-b-2 border-carlson-charcoal inline-block">The Pitch</h3>
       
-      <!-- Batters Grid -->
       <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-center mb-4">
         <!-- Striker -->
         <div id="striker-card" class="border-4 border-carlson-mustard rounded-lg p-2 bg-white relative">
@@ -129,6 +129,30 @@
         <button onclick="triggerWicket()" class="bg-carlson-red text-white font-black py-4 rounded shadow-3d uppercase">Wicket / Out</button>
       </div>
     </div>
+
+    <!-- 4. TEAMS & ROSTERS SECTION -->
+    <div class="bg-white rounded-xl p-4 shadow-3d relative" data-id="teams">
+      <div class="drag-handle absolute top-2 right-2 text-carlson-gray3 p-2">⋮⋮</div>
+      <h3 class="font-black text-carlson-charcoal mb-3 uppercase tracking-wide border-b-2 border-carlson-charcoal inline-block">Team Rosters</h3>
+      
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <!-- Batting Roster -->
+        <div>
+          <div class="font-bold text-sm text-carlson-mustard bg-carlson-charcoal px-2 py-1 rounded-t">🏏 Batting</div>
+          <ul id="batting-roster-list" class="text-sm border-x border-b border-carlson-gray3 p-2 h-32 overflow-y-auto bg-carlson-beige rounded-b list-disc list-inside"></ul>
+          <button onclick="addManualPlayer('bat')" class="mt-2 text-xs font-bold text-carlson-blue underline uppercase">+ Add Batter</button>
+        </div>
+        <!-- Bowling Roster -->
+        <div>
+          <div class="font-bold text-sm text-white bg-carlson-maroon px-2 py-1 rounded-t">🔴 Bowling</div>
+          <ul id="bowling-roster-list" class="text-sm border-x border-b border-carlson-gray3 p-2 h-32 overflow-y-auto bg-carlson-beige rounded-b list-disc list-inside"></ul>
+          <button onclick="addManualPlayer('bowl')" class="mt-2 text-xs font-bold text-carlson-maroon underline uppercase">+ Add Bowler</button>
+        </div>
+      </div>
+      
+      <button onclick="endInnings()" class="w-full bg-carlson-charcoal text-carlson-mustard font-black py-4 rounded shadow-3d uppercase tracking-wider">End Innings & Swap</button>
+    </div>
+
   </div>
 
   <script>
@@ -154,32 +178,35 @@
     // 2. STATE MANAGEMENT
     // ==========================================
     let state = {
-      score: 0, wickets: 0, balls: 0,
+      score: 0, wickets: 0, balls: 0, target: 0,
+      battingTeamName: "Swan Draught Dodgers",
+      bowlingTeamName: "Western Weekend Warriors",
       striker: { name: "Batter 1", runs: 0, balls: 0 },
       nonStriker: { name: "Batter 2", runs: 0, balls: 0 },
       bowler: { name: "Bowler 1", runs: 0, wickets: 0, balls: 0 },
+      battingRoster: ["Batter 1", "Batter 2"],
+      bowlingRoster: ["Bowler 1"],
       history: []
     };
 
     let isUpdatingFromFirebase = false;
 
-    // Listen to Firebase Realtime Database
     matchRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
         isUpdatingFromFirebase = true;
-        state = data;
+        // Merge in case older states lack new fields like rosters/targets
+        state = { ...state, ...data }; 
+        if (!state.battingRoster) state.battingRoster = [];
+        if (!state.bowlingRoster) state.bowlingRoster = [];
         renderUI();
         isUpdatingFromFirebase = false;
       }
     });
 
-    // Save to Firebase
     function saveState() {
       if (!isUpdatingFromFirebase) {
-        matchRef.set(state).catch(error => {
-          console.error("Firebase save error:", error);
-        });
+        matchRef.set(state).catch(error => console.error("Firebase error:", error));
       }
     }
 
@@ -247,6 +274,7 @@
       const newBatter = prompt("Wicket! Enter new batter's name:", "Batter " + (state.wickets + 2));
       if (newBatter) {
         state.striker = { name: newBatter, runs: 0, balls: 0 };
+        checkAndAddPlayer(newBatter, 'bat');
       }
       
       checkOver();
@@ -272,6 +300,7 @@
         const newBowler = prompt("End of Over! Enter next bowler's name:", randomLegend);
         if (newBowler) {
           state.bowler = { name: newBowler, runs: 0, wickets: 0, balls: 0 };
+          checkAndAddPlayer(newBowler, 'bowl');
         }
       }
     }
@@ -282,12 +311,83 @@
     }
 
     // ==========================================
-    // 4. UI RENDERING & DRAG/DROP
+    // 4. ROSTER & INNINGS LOGIC
+    // ==========================================
+    function checkAndAddPlayer(name, role) {
+      if (!name || name.trim() === "") return;
+      if (role === 'bat' && !state.battingRoster.includes(name)) state.battingRoster.push(name);
+      if (role === 'bowl' && !state.bowlingRoster.includes(name)) state.bowlingRoster.push(name);
+    }
+
+    function addManualPlayer(role) {
+      const name = prompt(`Enter ${role === 'bat' ? 'Batter' : 'Bowler'} Name:`);
+      if (name) {
+        checkAndAddPlayer(name, role);
+        saveState();
+        renderUI();
+      }
+    }
+
+    function endInnings() {
+      if(!confirm("End the innings? This will swap the teams and set the target score.")) return;
+      
+      snapshotHistory();
+      
+      // Swap Names
+      const tempTeam = state.battingTeamName;
+      state.battingTeamName = state.bowlingTeamName;
+      state.bowlingTeamName = tempTeam;
+      
+      // Swap Rosters
+      const tempRoster = state.battingRoster;
+      state.battingRoster = state.bowlingRoster;
+      state.bowlingRoster = tempRoster;
+
+      // Set Target and Reset Stats
+      state.target = state.score + 1;
+      state.score = 0;
+      state.wickets = 0;
+      state.balls = 0;
+      
+      // Prompt New Openers
+      const b1 = prompt("Enter opening Batter 1:", "Batter 1") || "Batter 1";
+      const b2 = prompt("Enter opening Batter 2:", "Batter 2") || "Batter 2";
+      const bw = prompt("Enter opening Bowler:", "Bowler 1") || "Bowler 1";
+      
+      state.striker = { name: b1, runs: 0, balls: 0 };
+      state.nonStriker = { name: b2, runs: 0, balls: 0 };
+      state.bowler = { name: bw, runs: 0, wickets: 0, balls: 0 };
+      
+      checkAndAddPlayer(b1, 'bat');
+      checkAndAddPlayer(b2, 'bat');
+      checkAndAddPlayer(bw, 'bowl');
+
+      saveState();
+      renderUI();
+    }
+
+    // ==========================================
+    // 5. UI RENDERING & DRAG/DROP
     // ==========================================
     function renderUI() {
+      // Top Scores
       document.getElementById('main-score').innerHTML = `${state.score}<span class="text-3xl text-carlson-charcoal">/${state.wickets}</span>`;
       document.getElementById('main-overs').innerText = `${Math.floor(state.balls / 6)}.${state.balls % 6}`;
       
+      // Target
+      const targetEl = document.getElementById('target-display');
+      if (state.target > 0) {
+        targetEl.classList.remove('hidden');
+        document.getElementById('main-target').innerText = state.target;
+      } else {
+        targetEl.classList.add('hidden');
+      }
+
+      // Teams Data
+      document.getElementById('batting-team').value = state.battingTeamName || "Swan Draught Dodgers";
+      document.getElementById('bowling-team').value = state.bowlingTeamName || "Western Weekend Warriors";
+
+      // Pitch Data
       document.getElementById('striker-name').value = state.striker.name;
       document.getElementById('striker-runs').innerText = state.striker.runs;
       document.getElementById('striker-balls').innerText = state.striker.balls;
@@ -300,12 +400,16 @@
       document.getElementById('bowler-runs').innerText = state.bowler.runs;
       document.getElementById('bowler-wickets').innerText = state.bowler.wickets;
       document.getElementById('bowler-overs').innerText = `${Math.floor(state.bowler.balls / 6)}.${state.bowler.balls % 6}`;
+
+      // Rosters
+      document.getElementById('batting-roster-list').innerHTML = (state.battingRoster || []).map(p => `<li>${p}</li>`).join('');
+      document.getElementById('bowling-roster-list').innerHTML = (state.bowlingRoster || []).map(p => `<li>${p}</li>`).join('');
     }
 
     document.addEventListener("DOMContentLoaded", () => {
       const container = document.getElementById('app-container');
-      
       const savedOrder = JSON.parse(localStorage.getItem('layoutOrder'));
+      
       if (savedOrder) {
         savedOrder.forEach(id => {
           const el = document.querySelector(`[data-id="${id}"]`);
@@ -325,12 +429,17 @@
       renderUI();
     });
 
-    ['striker-name', 'nonstriker-name', 'bowler-name'].forEach(id => {
+    // Input listeners to sync names across devices instantly and update rosters
+    ['batting-team', 'bowling-team', 'striker-name', 'nonstriker-name', 'bowler-name'].forEach(id => {
       document.getElementById(id).addEventListener('change', (e) => {
-        if (id === 'striker-name') state.striker.name = e.target.value;
-        if (id === 'nonstriker-name') state.nonStriker.name = e.target.value;
-        if (id === 'bowler-name') state.bowler.name = e.target.value;
+        const val = e.target.value;
+        if (id === 'batting-team') state.battingTeamName = val;
+        if (id === 'bowling-team') state.bowlingTeamName = val;
+        if (id === 'striker-name') { state.striker.name = val; checkAndAddPlayer(val, 'bat'); }
+        if (id === 'nonstriker-name') { state.nonStriker.name = val; checkAndAddPlayer(val, 'bat'); }
+        if (id === 'bowler-name') { state.bowler.name = val; checkAndAddPlayer(val, 'bowl'); }
         saveState();
+        renderUI();
       });
     });
 
