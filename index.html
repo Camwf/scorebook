@@ -69,11 +69,19 @@
     <!-- 1. OVERVIEW SECTION -->
     <div class="bg-white dark:bg-carlson-charcoal rounded-xl p-4 shadow-3d relative transition-colors duration-200" data-id="overview">
       <div class="drag-handle absolute top-2 right-2 text-carlson-gray3 p-2">⋮⋮</div>
-      <div class="flex justify-between items-center mb-2 pr-6">
-        <input type="text" id="batting-team" class="font-bold text-lg bg-transparent border-b border-dashed border-carlson-gray3 w-1/2 dark:text-white" value="">
-        <span class="text-sm font-bold text-carlson-gray2 dark:text-carlson-gray3">v</span>
-        <input type="text" id="bowling-team" class="font-bold text-lg bg-transparent border-b border-dashed border-carlson-gray3 w-1/2 text-right dark:text-white" value="">
+      
+      <!-- Stacked Team Inputs for Legibility -->
+      <div class="flex flex-col gap-3 mb-4 pr-8">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🏏</span>
+          <input type="text" id="batting-team" class="font-bold text-xl bg-transparent border-b border-dashed border-carlson-gray3 w-full dark:text-white truncate" value="" placeholder="Batting Team">
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🔴</span>
+          <input type="text" id="bowling-team" class="font-bold text-xl bg-transparent border-b border-dashed border-carlson-gray3 w-full dark:text-white truncate" value="" placeholder="Bowling Team">
+        </div>
       </div>
+
       <div class="flex justify-between items-end">
         <div>
           <div class="text-5xl font-black text-carlson-maroon tracking-tighter" id="main-score">0<span class="text-3xl text-carlson-charcoal dark:text-carlson-gray3">/0</span></div>
@@ -90,26 +98,22 @@
       <h3 class="font-black text-carlson-charcoal dark:text-white mb-3 uppercase tracking-wide border-b-2 border-carlson-charcoal dark:border-carlson-gray3 inline-block">The Pitch</h3>
       
       <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-center mb-4">
-        <!-- Striker -->
         <div id="striker-card" class="border-4 border-carlson-mustard rounded-lg p-2 bg-white dark:bg-carlson-gray1 relative transition-colors duration-200">
           <div class="absolute -top-3 left-2 bg-carlson-mustard text-carlson-charcoal text-xs font-black px-2 py-0.5 rounded border-2 border-carlson-charcoal dark:border-black">🏏 FACING</div>
           <input type="text" id="striker-name" class="font-bold w-full bg-transparent mt-2 truncate dark:text-white" value="" placeholder="Batter 1">
           <div class="text-sm font-bold mt-1 text-carlson-gray2 dark:text-carlson-beige"><span id="striker-runs">0</span> (<span id="striker-balls">0</span>)</div>
         </div>
         
-        <!-- Swap Button -->
         <button onclick="swapBatters()" class="bg-white dark:bg-carlson-charcoal border-2 border-carlson-blue rounded-full w-10 h-10 flex items-center justify-center shadow-3d -mt-2">
           🔄
         </button>
 
-        <!-- Non-Striker -->
         <div id="nonstriker-card" class="border-2 border-carlson-gray3 rounded-lg p-2 bg-carlson-beige dark:bg-carlson-gray2 opacity-80 transition-colors duration-200">
           <input type="text" id="nonstriker-name" class="font-bold w-full bg-transparent mt-2 truncate dark:text-white" value="" placeholder="Batter 2">
           <div class="text-sm font-bold mt-1 text-carlson-gray2 dark:text-carlson-beige"><span id="nonstriker-runs">0</span> (<span id="nonstriker-balls">0</span>)</div>
         </div>
       </div>
 
-      <!-- Bowler -->
       <div class="border-2 border-carlson-maroon rounded-lg p-2 bg-white dark:bg-carlson-gray1 flex justify-between items-center transition-colors duration-200">
         <div class="w-2/3">
           <div class="text-xs font-black text-carlson-maroon uppercase mb-1">Current Bowler 🔴</div>
@@ -170,15 +174,18 @@
       
       <div class="grid grid-cols-2 gap-2">
         <button onclick="endInnings()" class="bg-carlson-charcoal dark:bg-carlson-gray1 text-carlson-mustard font-black py-4 rounded shadow-3d uppercase tracking-wider text-xs border border-carlson-charcoal dark:border-black transition-colors duration-200">Swap Innings</button>
-        <button onclick="archiveAndReset()" class="bg-carlson-gray2 dark:bg-carlson-gray3 text-white font-black py-4 rounded shadow-3d uppercase tracking-wider text-xs border border-carlson-charcoal dark:border-black transition-colors duration-200">Reset Game</button>
+        <button onclick="archiveAndReset()" class="bg-carlson-gray2 dark:bg-carlson-gray3 text-white font-black py-4 rounded shadow-3d uppercase tracking-wider text-xs border border-carlson-charcoal dark:border-black transition-colors duration-200">End Game</button>
       </div>
     </div>
 
-    <!-- 5. ARCHIVED GAMES SECTION -->
+    <!-- 5. ARCHIVED GAMES SECTION (COLLAPSIBLE) -->
     <div class="bg-white dark:bg-carlson-charcoal rounded-xl p-4 shadow-3d relative transition-colors duration-200" data-id="archive">
       <div class="drag-handle absolute top-2 right-2 text-carlson-gray3 p-2">⋮⋮</div>
-      <h3 class="font-black text-carlson-charcoal dark:text-white mb-3 uppercase tracking-wide border-b-2 border-carlson-charcoal dark:border-carlson-gray3 inline-block">Past Matches</h3>
-      <div id="archives-list" class="flex flex-col gap-2">
+      <div class="cursor-pointer flex justify-between items-center border-b-2 border-carlson-charcoal dark:border-carlson-gray3 mb-3 pb-1" onclick="toggleArchive()">
+        <h3 class="font-black text-carlson-charcoal dark:text-white uppercase tracking-wide inline-block mb-0 border-0">Past Matches</h3>
+        <span id="archive-toggle-icon" class="text-carlson-charcoal dark:text-white font-bold text-sm">▼</span>
+      </div>
+      <div id="archives-list" class="flex flex-col gap-2 hidden">
         <p class="text-sm text-carlson-gray2 dark:text-carlson-gray3 italic">No past matches found.</p>
       </div>
     </div>
@@ -310,9 +317,16 @@
       renderUI();
     }
 
-    // Modal & Theme Toggles
+    // Modal, Theme & Archive Toggles
     function toggleSettingsMenu() {
       document.getElementById('settings-modal').classList.toggle('hidden');
+    }
+
+    function toggleArchive() {
+      const list = document.getElementById('archives-list');
+      const icon = document.getElementById('archive-toggle-icon');
+      list.classList.toggle('hidden');
+      icon.innerText = list.classList.contains('hidden') ? '▼' : '▲';
     }
 
     function toggleTheme() {
@@ -331,7 +345,6 @@
       }
     }
     
-    // Set initial button text based on pre-load script
     document.addEventListener("DOMContentLoaded", updateThemeButtonText);
 
     // ==========================================
@@ -523,15 +536,42 @@
     }
 
     function archiveAndReset() {
-      if(!confirm("Are you sure you want to permanently archive this match and start fresh?")) return;
+      if(!confirm("Are you sure you want to permanently end this match and start fresh?")) return;
+
+      const dateStr = new Date().toLocaleString([], {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'});
+      const timeStamp = new Date().getTime();
+
+      let team1 = state.target > 0 ? state.bowlingTeamName : state.battingTeamName;
+      let team1Score = state.target > 0 ? (state.target - 1) : state.score;
+      
+      let team2 = state.target > 0 ? state.battingTeamName : "TBD";
+      let team2Score = state.target > 0 ? state.score : 0;
+      let team2Wickets = state.target > 0 ? state.wickets : 0;
+      let team2Overs = state.target > 0 ? `${Math.floor(state.balls / 6)}.${state.balls % 6}` : "0.0";
+
+      let winner = null;
+      if (state.target > 0) {
+          if (team2Score >= state.target) {
+              winner = team2;
+          } else if (team2Score < team1Score) {
+              winner = team1;
+          } else {
+              winner = "Tie";
+          }
+      } else {
+          winner = team1Score > 0 ? team1 : null; 
+      }
 
       const archiveRef = db.ref('archivedMatches').push();
       archiveRef.set({
-        date: new Date().toLocaleDateString(),
-        teamA: state.battingTeamName,
-        teamB: state.bowlingTeamName,
-        score: `${state.score}/${state.wickets}`,
-        overs: `${Math.floor(state.balls / 6)}.${state.balls % 6}`,
+        date: dateStr,
+        timestamp: timeStamp,
+        teamA: team1,
+        scoreA: team1Score,
+        teamB: team2,
+        scoreB: state.target > 0 ? `${team2Score}/${team2Wickets}` : "DNB",
+        oversB: state.target > 0 ? team2Overs : "0.0",
+        winner: winner,
         matchData: state
       });
 
@@ -550,7 +590,7 @@
       };
       
       promptInitialSetup();
-      alert("Match archived successfully. Board reset.");
+      alert("Match ended and archived successfully.");
     }
 
     function deleteArchive(id) {
@@ -608,16 +648,37 @@
         return;
       }
       
-      list.innerHTML = Object.keys(data).reverse().map(id => {
+      // Sort chronologically by timestamp (newest first)
+      const sortedIds = Object.keys(data).sort((a, b) => (data[b].timestamp || 0) - (data[a].timestamp || 0));
+
+      list.innerHTML = sortedIds.map(id => {
         const match = data[id];
+        
+        // Handle retro-compatibility for older archive entries
+        const tA = match.teamA || "Team 1";
+        const tB = match.teamB || "Team 2";
+        const sA = match.scoreA !== undefined ? match.scoreA : (match.matchData?.target ? match.matchData.target - 1 : 0);
+        const sB = match.scoreB !== undefined ? match.scoreB : (match.score || "DNB");
+        
+        const winA = match.winner === tA ? '🏆' : '';
+        const winB = match.winner === tB ? '🏆' : '';
+
         return `
           <div class="bg-carlson-beige dark:bg-carlson-gray2 p-3 rounded border border-carlson-gray3 flex justify-between items-center shadow-sm transition-colors duration-200">
-            <div>
-              <div class="text-xs text-carlson-gray2 dark:text-carlson-gray3 font-bold mb-1">${match.date}</div>
-              <div class="text-sm font-black text-carlson-charcoal dark:text-white">${match.teamA} <span class="text-carlson-gray2 dark:text-carlson-gray3 font-normal">v</span> ${match.teamB}</div>
-              <div class="text-carlson-maroon dark:text-carlson-mustard font-bold text-sm">Score: ${match.score} <span class="text-xs font-normal text-carlson-gray2 dark:text-carlson-gray3">(${match.overs} Overs)</span></div>
+            <div class="w-full pr-2">
+              <div class="text-xs text-carlson-gray2 dark:text-carlson-gray3 font-bold mb-2">${match.date || 'Previous Match'}</div>
+              
+              <div class="flex justify-between items-center mb-1">
+                <div class="text-sm font-black text-carlson-charcoal dark:text-white truncate pr-2">${winA} ${tA}</div>
+                <div class="text-sm font-bold text-carlson-maroon dark:text-carlson-mustard shrink-0">${sA}</div>
+              </div>
+              
+              <div class="flex justify-between items-center">
+                <div class="text-sm font-black text-carlson-charcoal dark:text-white truncate pr-2">${winB} ${tB}</div>
+                <div class="text-sm font-bold text-carlson-maroon dark:text-carlson-mustard shrink-0">${sB} <span class="text-xs font-normal text-carlson-gray2 dark:text-carlson-gray3">(${match.oversB || match.overs || '0.0'} Ov)</span></div>
+              </div>
             </div>
-            <button onclick="deleteArchive('${id}')" class="bg-white dark:bg-carlson-charcoal border-2 border-carlson-red text-carlson-red dark:text-carlson-pink dark:border-carlson-pink font-black w-8 h-8 rounded flex items-center justify-center shadow-3d pb-0.5">X</button>
+            <button onclick="deleteArchive('${id}')" class="bg-white dark:bg-carlson-charcoal border-2 border-carlson-red text-carlson-red dark:text-carlson-pink dark:border-carlson-pink font-black w-8 h-8 rounded flex items-center justify-center shadow-3d pb-0.5 shrink-0">X</button>
           </div>
         `;
       }).join('');
@@ -629,7 +690,6 @@
       
       if (savedOrder) {
         savedOrder.forEach(id => {
-          // ensure we only try to append elements that still exist (prevents crash from old 'settings' id)
           const el = document.querySelector(`[data-id="${id}"]`);
           if (el) container.appendChild(el);
         });
