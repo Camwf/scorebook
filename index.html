@@ -136,4 +136,207 @@
     // 1. FIREBASE CONFIGURATION
     // ==========================================
     const firebaseConfig = {
-      apiKey: "AIzaSyDphppctjnw0X-e6dR_c6lQXsQ
+      apiKey: "AIzaSyDphppctjnw0X-e6dR_c6lQXsQ469SRQf4",
+      authDomain: "scorebookcam.firebaseapp.com",
+      databaseURL: "https://scorebookcam-default-rtdb.firebaseio.com",
+      projectId: "scorebookcam",
+      storageBucket: "scorebookcam.firebasestorage.app",
+      messagingSenderId: "868566468125",
+      appId: "1:868566468125:web:459eb6500867308b2268f4",
+      measurementId: "G-53HEZ6PJ4Y"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const matchRef = db.ref('currentMatch');
+
+    // ==========================================
+    // 2. STATE MANAGEMENT
+    // ==========================================
+    let state = {
+      score: 0, wickets: 0, balls: 0,
+      striker: { name: "Batter 1", runs: 0, balls: 0 },
+      nonStriker: { name: "Batter 2", runs: 0, balls: 0 },
+      bowler: { name: "Bowler 1", runs: 0, wickets: 0, balls: 0 },
+      history: []
+    };
+
+    let isUpdatingFromFirebase = false;
+
+    // Listen to Firebase Realtime Database
+    matchRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        isUpdatingFromFirebase = true;
+        state = data;
+        renderUI();
+        isUpdatingFromFirebase = false;
+      }
+    });
+
+    // Save to Firebase
+    function saveState() {
+      if (!isUpdatingFromFirebase) {
+        matchRef.set(state).catch(error => {
+          console.error("Firebase save error:", error);
+        });
+      }
+    }
+
+    function snapshotHistory() {
+      const stateCopy = JSON.parse(JSON.stringify(state));
+      delete stateCopy.history;
+      state.history.push(stateCopy);
+      if (state.history.length > 10) state.history.shift(); 
+    }
+
+    // ==========================================
+    // 3. CORE CRICKET LOGIC
+    // ==========================================
+    function addRun(runs) {
+      snapshotHistory();
+      state.score += runs;
+      state.balls += 1;
+      state.striker.runs += runs;
+      state.striker.balls += 1;
+      state.bowler.runs += runs;
+      state.bowler.balls += 1;
+      
+      if (runs % 2 !== 0) swapLogic();
+      checkOver();
+      saveState();
+      renderUI();
+    }
+
+    function addExtra(type) {
+      snapshotHistory();
+      state.score += 1; 
+      state.bowler.runs += 1;
+      
+      if (type !== 'wd' && type !== 'nb') {
+        state.balls += 1;
+        state.striker.balls += 1;
+        state.bowler.balls += 1;
+      }
+      checkOver();
+      saveState();
+      renderUI();
+    }
+
+    function swapLogic() {
+      const temp = state.striker;
+      state.striker = state.nonStriker;
+      state.nonStriker = temp;
+    }
+
+    function swapBatters() {
+      snapshotHistory();
+      swapLogic();
+      saveState();
+      renderUI();
+    }
+
+    function triggerWicket() {
+      snapshotHistory();
+      state.wickets += 1;
+      state.balls += 1;
+      state.striker.balls += 1;
+      state.bowler.wickets += 1;
+      state.bowler.balls += 1;
+      
+      const newBatter = prompt("Wicket! Enter new batter's name:", "Batter " + (state.wickets + 2));
+      if (newBatter) {
+        state.striker = { name: newBatter, runs: 0, balls: 0 };
+      }
+      
+      checkOver();
+      saveState();
+      renderUI();
+    }
+
+    function undoLast() {
+      if (state.history.length > 0) {
+        state = state.history.pop();
+        saveState();
+        renderUI();
+      } else {
+        alert("Nothing left to rewind!");
+      }
+    }
+
+    function checkOver() {
+      if (state.balls > 0 && state.balls % 6 === 0) {
+        swapLogic();
+        const legends = ["Dennis Lillee", "Shane Warne", "Curtly Ambrose", "Joel Garner", "Malcolm Marshall"];
+        const randomLegend = legends[Math.floor(Math.random() * legends.length)];
+        const newBowler = prompt("End of Over! Enter next bowler's name:", randomLegend);
+        if (newBowler) {
+          state.bowler = { name: newBowler, runs: 0, wickets: 0, balls: 0 };
+        }
+      }
+    }
+
+    function promptCustomRun() {
+      const r = parseInt(prompt("Enter custom runs (e.g. 7 for overthrows):", "0"));
+      if (!isNaN(r)) addRun(r);
+    }
+
+    // ==========================================
+    // 4. UI RENDERING & DRAG/DROP
+    // ==========================================
+    function renderUI() {
+      document.getElementById('main-score').innerHTML = `${state.score}<span class="text-3xl text-carlson-charcoal">/${state.wickets}</span>`;
+      document.getElementById('main-overs').innerText = `${Math.floor(state.balls / 6)}.${state.balls % 6}`;
+      
+      document.getElementById('striker-name').value = state.striker.name;
+      document.getElementById('striker-runs').innerText = state.striker.runs;
+      document.getElementById('striker-balls').innerText = state.striker.balls;
+      
+      document.getElementById('nonstriker-name').value = state.nonStriker.name;
+      document.getElementById('nonstriker-runs').innerText = state.nonStriker.runs;
+      document.getElementById('nonstriker-balls').innerText = state.nonStriker.balls;
+      
+      document.getElementById('bowler-name').value = state.bowler.name;
+      document.getElementById('bowler-runs').innerText = state.bowler.runs;
+      document.getElementById('bowler-wickets').innerText = state.bowler.wickets;
+      document.getElementById('bowler-overs').innerText = `${Math.floor(state.bowler.balls / 6)}.${state.bowler.balls % 6}`;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const container = document.getElementById('app-container');
+      
+      const savedOrder = JSON.parse(localStorage.getItem('layoutOrder'));
+      if (savedOrder) {
+        savedOrder.forEach(id => {
+          const el = document.querySelector(`[data-id="${id}"]`);
+          if (el) container.appendChild(el);
+        });
+      }
+
+      Sortable.create(container, {
+        handle: '.drag-handle',
+        animation: 150,
+        onEnd: function () {
+          const order = Array.from(container.children).map(el => el.getAttribute('data-id'));
+          localStorage.setItem('layoutOrder', JSON.stringify(order));
+        }
+      });
+      
+      renderUI();
+    });
+
+    ['striker-name', 'nonstriker-name', 'bowler-name'].forEach(id => {
+      document.getElementById(id).addEventListener('change', (e) => {
+        if (id === 'striker-name') state.striker.name = e.target.value;
+        if (id === 'nonstriker-name') state.nonStriker.name = e.target.value;
+        if (id === 'bowler-name') state.bowler.name = e.target.value;
+        saveState();
+      });
+    });
+
+    function toggleScorecard() {
+      alert("Scorecard summary:\n" + state.score + "/" + state.wickets + " (" + Math.floor(state.balls / 6) + "." + (state.balls % 6) + " Overs)");
+    }
+  </script>
+</body>
+</html>
