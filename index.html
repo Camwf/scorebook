@@ -3,7 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Fremantle Casual Cricket League Scorebook</title>
+  <title>Scorebook</title>
+  
+  <!-- Web App / PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Scorebook">
+  <meta name="theme-color" content="#1c1c1c">
+  
+  <!-- Emoji Favicon & App Icon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏏</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏏</text></svg>">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   
@@ -60,7 +72,7 @@
     
     <!-- HEADER BAR -->
     <div class="flex justify-between items-center mb-2 px-2">
-      <h1 class="font-black text-carlson-maroon dark:text-carlson-mustard uppercase tracking-wider text-sm">Fremantle Scorebook</h1>
+      <h1 class="font-black text-carlson-maroon dark:text-carlson-mustard uppercase tracking-wider text-lg">Scorebook 🏏</h1>
       <button onclick="openModal('settings-modal')" class="bg-white dark:bg-carlson-charcoal border-2 border-carlson-charcoal dark:border-black rounded-full w-10 h-10 flex items-center justify-center shadow-3d text-xl pb-1">
         ⚙️
       </button>
@@ -540,3 +552,311 @@
             });
         });
     }
+
+    function promptArchiveGame() {
+        customConfirm("Are you sure you want to permanently end this match and start fresh?", () => {
+            const dateStr = new Date().toLocaleString([], {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'});
+            let team1 = state.target > 0 ? state.bowlingTeamName : state.battingTeamName;
+            let team1Score = state.target > 0 ? (state.target - 1) : state.score;
+            let team2 = state.target > 0 ? state.battingTeamName : "TBD";
+            let team2Score = state.target > 0 ? state.score : 0;
+            let winner = (state.target > 0) ? (team2Score >= state.target ? team2 : (team2Score < team1Score ? team1 : "Tie")) : (team1Score > 0 ? team1 : null);
+
+            db.ref('archivedMatches').push().set({
+                date: dateStr, timestamp: new Date().getTime(),
+                teamA: team1, scoreA: team1Score,
+                teamB: team2, scoreB: state.target > 0 ? `${team2Score}/${state.wickets}` : "DNB",
+                oversB: state.target > 0 ? `${Math.floor(state.balls/6)}.${state.balls%6}` : "0.0",
+                winner: winner, matchData: state
+            });
+
+            // Wipe State Completely
+            state = {
+                score: 0, wickets: 0, balls: 0, target: 0,
+                battingTeamName: "", bowlingTeamName: "",
+                striker: { name: "", runs: 0, balls: 0, beers: 0 },
+                nonStriker: { name: "", runs: 0, balls: 0, beers: 0 },
+                bowler: { name: "", runs: 0, wickets: 0, balls: 0 },
+                battingRoster: [], bowlingRoster: [], matchLog: [], history: [],
+                settings: { maxOvers: 0, maxBallsPerBatter: 0 }
+            };
+            saveState();
+
+            // Clear Setup Modal Fields
+            document.getElementById('setup-t1').value = "";
+            document.getElementById('setup-t2').value = "";
+            document.getElementById('setup-btn-1').innerText = "Team 1";
+            document.getElementById('setup-btn-2').innerText = "Team 2";
+            document.getElementById('setup-max-overs').value = "";
+            document.getElementById('setup-max-balls').value = "";
+            document.getElementById('setup-b1').value = "";
+            document.getElementById('setup-b2').value = "";
+            document.getElementById('setup-bw').value = "";
+            
+            openModal('modal-setup');
+        });
+    }
+
+    // ==========================================
+    // 5. IN-GAME LOGIC & PROMPTS
+    // ==========================================
+    function checkLimits() {
+      let alerts = [];
+      if (state.settings.maxOvers > 0 && state.balls >= state.settings.maxOvers * 6) alerts.push("Innings Overs Limit Reached!");
+      if (state.settings.maxBallsPerBatter > 0 && state.striker.balls >= state.settings.maxBallsPerBatter) alerts.push(`${state.striker.name} has reached the max ball limit (${state.settings.maxBallsPerBatter}) and must retire!`);
+      if (alerts.length > 0) setTimeout(() => customAlert("⚠️ " + alerts.join("<br><br>⚠️ ")), 100);
+    }
+
+    function checkOver() {
+      if (state.balls > 0 && state.balls % 6 === 0) {
+        swapLogic();
+        saveState(); renderUI();
+        
+        const legends = ["Dennis Lillee", "Shane Warne", "Curtly Ambrose", "Joel Garner", "Malcolm Marshall"];
+        document.getElementById('over-next').placeholder = legends[Math.floor(Math.random() * legends.length)];
+        document.getElementById('over-next').value = "";
+        openModal('modal-over');
+      }
+    }
+    
+    function confirmOver() {
+        const val = document.getElementById('over-next').value || document.getElementById('over-next').placeholder;
+        state.bowler = { name: val, runs: 0, wickets: 0, balls: 0 };
+        checkAndAddPlayer(val, 'bowl');
+        closeModal('modal-over');
+        saveState(); renderUI();
+    }
+
+    function addRun(runs) {
+      snapshotHistory();
+      state.score += runs; state.balls += 1;
+      state.striker.runs += runs; state.striker.balls += 1;
+      state.bowler.runs += runs; state.bowler.balls += 1;
+      if (runs % 2 !== 0) swapLogic();
+      saveState(); renderUI(); checkLimits(); checkOver();
+    }
+
+    function addExtra(type) {
+      snapshotHistory();
+      state.score += 1; state.bowler.runs += 1;
+      if (type !== 'wd' && type !== 'nb') { state.balls += 1; state.striker.balls += 1; state.bowler.balls += 1; }
+      saveState(); renderUI(); checkLimits(); checkOver();
+    }
+
+    function addBeerLBW() {
+      snapshotHistory();
+      state.striker.beers = (state.striker.beers || 0) + 1;
+      state.balls += 1; state.striker.balls += 1; state.bowler.balls += 1;
+      saveState(); renderUI(); checkLimits(); checkOver();
+    }
+
+    function swapLogic() { const temp = state.striker; state.striker = state.nonStriker; state.nonStriker = temp; }
+    function swapBatters() { snapshotHistory(); swapLogic(); saveState(); renderUI(); }
+
+    function promptCustomRun() {
+        customInput("Custom Runs", [{label: "Enter runs (e.g. 7)", type: "number"}], (vals) => {
+            const r = parseInt(vals[0]); if(!isNaN(r)) addRun(r);
+        });
+    }
+
+    function triggerWicket() {
+        document.getElementById('wicket-method').value = "";
+        document.getElementById('wicket-next').value = "";
+        document.getElementById('wicket-next').placeholder = "Batter " + (state.wickets + 2);
+        openModal('modal-wicket');
+    }
+    
+    function confirmWicket() {
+        snapshotHistory();
+        state.wickets += 1; state.balls += 1;
+        state.striker.balls += 1; state.bowler.wickets += 1; state.bowler.balls += 1;
+        
+        const method = document.getElementById('wicket-method').value || "Out";
+        state.matchLog.push({ batter: state.striker.name, runs: state.striker.runs, balls: state.striker.balls, beers: state.striker.beers || 0, method: method });
+        
+        const newBatter = document.getElementById('wicket-next').value || document.getElementById('wicket-next').placeholder;
+        state.striker = { name: newBatter, runs: 0, balls: 0, beers: 0 };
+        checkAndAddPlayer(newBatter, 'bat');
+        
+        closeModal('modal-wicket');
+        saveState(); renderUI(); checkLimits(); checkOver();
+    }
+
+    function undoLast() {
+      if (state.history.length > 0) { state = state.history.pop(); saveState(); renderUI(); } 
+      else { customAlert("Nothing left to rewind!"); }
+    }
+
+    function promptAddPlayer(role) {
+        customInput("Add Player", [{label: role==='bat'?"Batter Name":"Bowler Name", placeholder: "Name"}], (vals) => {
+            if(vals[0]) { checkAndAddPlayer(vals[0], role); saveState(); renderUI(); }
+        });
+    }
+    
+    function checkAndAddPlayer(name, role) {
+      if (!name || name.trim() === "") return;
+      if (role === 'bat' && !state.battingRoster.includes(name)) state.battingRoster.push(name);
+      if (role === 'bowl' && !state.bowlingRoster.includes(name)) state.bowlingRoster.push(name);
+    }
+    function updateRosterName(role, index, newName, oldName) {
+      if (!newName || newName.trim() === "") return;
+      if (role === 'bat') {
+        state.battingRoster[index] = newName;
+        if (state.striker.name === oldName) state.striker.name = newName;
+        if (state.nonStriker.name === oldName) state.nonStriker.name = newName;
+      } else {
+        state.bowlingRoster[index] = newName;
+        if (state.bowler.name === oldName) state.bowler.name = newName;
+      }
+      saveState(); renderUI();
+    }
+
+    function updateSettings() {
+      state.settings.maxOvers = parseInt(document.getElementById('setting-max-overs').value) || 0;
+      state.settings.maxBallsPerBatter = parseInt(document.getElementById('setting-max-balls').value) || 0;
+      saveState();
+    }
+
+    // ==========================================
+    // 6. UI RENDERING & DRAG/DROP
+    // ==========================================
+    function renderUI() {
+      document.getElementById('main-score').innerHTML = `${state.score}<span class="text-3xl text-carlson-charcoal dark:text-carlson-gray3">/${state.wickets}</span>`;
+      document.getElementById('main-overs').innerText = `${Math.floor(state.balls / 6)}.${state.balls % 6}`;
+      
+      const targetEl = document.getElementById('target-display');
+      if (state.target > 0) { targetEl.classList.remove('hidden'); document.getElementById('main-target').innerText = state.target; } 
+      else { targetEl.classList.add('hidden'); }
+
+      document.getElementById('batting-team').value = state.battingTeamName || "";
+      document.getElementById('bowling-team').value = state.bowlingTeamName || "";
+      document.getElementById('setting-max-overs').value = state.settings.maxOvers || "";
+      document.getElementById('setting-max-balls').value = state.settings.maxBallsPerBatter || "";
+
+      document.getElementById('striker-name').value = state.striker.name;
+      document.getElementById('striker-runs').innerText = state.striker.runs;
+      document.getElementById('striker-balls').innerText = state.striker.balls;
+      document.getElementById('striker-beers').innerText = state.striker.beers ? '🍺'.repeat(state.striker.beers) : '';
+      
+      document.getElementById('nonstriker-name').value = state.nonStriker.name;
+      document.getElementById('nonstriker-runs').innerText = state.nonStriker.runs;
+      document.getElementById('nonstriker-balls').innerText = state.nonStriker.balls;
+      document.getElementById('nonstriker-beers').innerText = state.nonStriker.beers ? '🍺'.repeat(state.nonStriker.beers) : '';
+      
+      document.getElementById('bowler-name').value = state.bowler.name;
+      document.getElementById('bowler-runs').innerText = state.bowler.runs;
+      document.getElementById('bowler-wickets').innerText = state.bowler.wickets;
+      document.getElementById('bowler-overs').innerText = `${Math.floor(state.bowler.balls / 6)}.${state.bowler.balls % 6}`;
+
+      document.getElementById('batting-roster-list').innerHTML = (state.battingRoster || []).map((p, index) => 
+        `<input type="text" class="w-full bg-transparent font-bold border-b border-dashed border-carlson-gray3 dark:text-white focus:outline-none truncate" value="${p}" onchange="updateRosterName('bat', ${index}, this.value, '${p}')">`
+      ).join('');
+      
+      document.getElementById('bowling-roster-list').innerHTML = (state.bowlingRoster || []).map((p, index) => 
+        `<input type="text" class="w-full bg-transparent font-bold border-b border-dashed border-carlson-gray3 dark:text-white focus:outline-none truncate" value="${p}" onchange="updateRosterName('bowl', ${index}, this.value, '${p}')">`
+      ).join('');
+    }
+
+    function toggleScorecard() {
+      let html = `<div class="font-bold text-3xl mb-4">${state.score}/${state.wickets} <span class="text-sm font-normal text-carlson-gray2 dark:text-carlson-gray3">(${Math.floor(state.balls / 6)}.${state.balls % 6} Overs)</span></div>`;
+      
+      html += `<h5 class="font-black text-xs uppercase text-carlson-gray2 dark:text-carlson-gray3 mb-1 border-b border-carlson-gray3 pb-1">Current Batters</h5>`;
+      html += `<div class="mb-4 text-sm font-bold flex flex-col gap-1">`;
+      html += `<div>${state.striker.name}: <span class="text-carlson-maroon dark:text-carlson-mustard">${state.striker.runs}</span> <span class="text-carlson-gray2 font-normal">(${state.striker.balls})</span> ${state.striker.beers ? '🍺'.repeat(state.striker.beers) : ''}</div>`;
+      html += `<div>${state.nonStriker.name}: <span class="text-carlson-maroon dark:text-carlson-mustard">${state.nonStriker.runs}</span> <span class="text-carlson-gray2 font-normal">(${state.nonStriker.balls})</span> ${state.nonStriker.beers ? '🍺'.repeat(state.nonStriker.beers) : ''}</div>`;
+      html += `</div>`;
+      
+      if (state.matchLog && state.matchLog.length > 0) {
+        html += `<h5 class="font-black text-xs uppercase text-carlson-gray2 dark:text-carlson-gray3 mb-2 border-b border-carlson-gray3 pb-1 mt-4">Fall of Wickets / Retirements</h5>`;
+        html += `<ul class="text-sm font-bold flex flex-col gap-3">`;
+        state.matchLog.forEach(log => {
+          html += `<li>${log.batter}: <span class="text-carlson-maroon dark:text-carlson-mustard">${log.runs}</span> <span class="text-carlson-gray2 font-normal">(${log.balls})</span> ${log.beers ? '🍺'.repeat(log.beers) : ''} <br><span class="text-xs font-normal text-carlson-gray2 italic">${log.method}</span></li>`;
+        });
+        html += `</ul>`;
+      } else {
+        html += `<div class="text-sm italic text-carlson-gray2 mt-4">No wickets yet.</div>`;
+      }
+      
+      document.getElementById('scorecard-content').innerHTML = html;
+      openModal('modal-scorecard');
+    }
+
+    function renderArchives(data) {
+      const list = document.getElementById('archives-list');
+      if (!data) { list.innerHTML = `<p class="text-sm text-carlson-gray2 dark:text-carlson-gray3 italic">No past matches found.</p>`; return; }
+      
+      const sortedIds = Object.keys(data).sort((a, b) => (data[b].timestamp || 0) - (data[a].timestamp || 0));
+      list.innerHTML = sortedIds.map(id => {
+        const match = data[id];
+        const tA = match.teamA || "Team 1"; const tB = match.teamB || "Team 2";
+        const sA = match.scoreA !== undefined ? match.scoreA : (match.matchData?.target ? match.matchData.target - 1 : 0);
+        const sB = match.scoreB !== undefined ? match.scoreB : (match.score || "DNB");
+        const winA = match.winner === tA ? '🏆' : ''; const winB = match.winner === tB ? '🏆' : '';
+
+        return `
+          <div class="bg-carlson-beige dark:bg-carlson-gray2 p-3 rounded border border-carlson-gray3 flex justify-between items-center shadow-sm transition-colors duration-200">
+            <div class="w-full pr-2">
+              <div class="text-xs text-carlson-gray2 dark:text-carlson-gray3 font-bold mb-2">${match.date || 'Previous Match'}</div>
+              <div class="flex justify-between items-center mb-1">
+                <div class="text-sm font-black text-carlson-charcoal dark:text-white truncate pr-2">${winA} ${tA}</div>
+                <div class="text-sm font-bold text-carlson-maroon dark:text-carlson-mustard shrink-0">${sA}</div>
+              </div>
+              <div class="flex justify-between items-center">
+                <div class="text-sm font-black text-carlson-charcoal dark:text-white truncate pr-2">${winB} ${tB}</div>
+                <div class="text-sm font-bold text-carlson-maroon dark:text-carlson-mustard shrink-0">${sB} <span class="text-xs font-normal text-carlson-gray2 dark:text-carlson-gray3">(${match.oversB || match.overs || '0.0'} Ov)</span></div>
+              </div>
+            </div>
+            <button onclick="deleteArchive('${id}')" class="bg-white dark:bg-carlson-charcoal border-2 border-carlson-red text-carlson-red dark:text-carlson-pink dark:border-carlson-pink font-black w-8 h-8 rounded flex items-center justify-center shadow-3d pb-0.5 shrink-0">X</button>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function toggleArchiveList() {
+      const list = document.getElementById('archives-list');
+      const icon = document.getElementById('archive-toggle-icon');
+      list.classList.toggle('hidden');
+      icon.innerText = list.classList.contains('hidden') ? '▼' : '▲';
+    }
+
+    function deleteArchive(id) {
+        customConfirm("Permanently delete this archived match?", () => db.ref('archivedMatches/' + id).remove());
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const container = document.getElementById('app-container');
+      const savedOrder = JSON.parse(localStorage.getItem('layoutOrder'));
+      if (savedOrder) {
+        savedOrder.forEach(id => {
+          const el = document.querySelector(`[data-id="${id}"]`);
+          if (el) container.appendChild(el);
+        });
+      }
+      Sortable.create(container, {
+        handle: '.drag-handle', animation: 150,
+        onEnd: function () {
+          const order = Array.from(container.children).map(el => el.getAttribute('data-id')).filter(id => id);
+          localStorage.setItem('layoutOrder', JSON.stringify(order));
+        }
+      });
+      renderUI();
+    });
+
+    ['batting-team', 'bowling-team', 'striker-name', 'nonstriker-name', 'bowler-name'].forEach(id => {
+      document.getElementById(id).addEventListener('change', (e) => {
+        const val = e.target.value.trim(); if (!val) return;
+        if (id === 'batting-team') { state.battingTeamName = val; saveState(); renderUI(); return; }
+        if (id === 'bowling-team') { state.bowlingTeamName = val; saveState(); renderUI(); return; }
+        let oldName = ""; let role = 'bat';
+        if (id === 'striker-name') { oldName = state.striker.name; state.striker.name = val; }
+        if (id === 'nonstriker-name') { oldName = state.nonStriker.name; state.nonStriker.name = val; }
+        if (id === 'bowler-name') { oldName = state.bowler.name; state.bowler.name = val; role = 'bowl'; }
+        let roster = role === 'bat' ? state.battingRoster : state.bowlingRoster;
+        const index = roster.indexOf(oldName);
+        if (index !== -1) { roster[index] = val; } else { checkAndAddPlayer(val, role); }
+        saveState(); renderUI();
+      });
+    });
+  </script>
+</body>
+</html>
