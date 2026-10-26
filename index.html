@@ -73,7 +73,7 @@
         <!-- Striker -->
         <div id="striker-card" class="border-4 border-carlson-mustard rounded-lg p-2 bg-white relative">
           <div class="absolute -top-3 left-2 bg-carlson-mustard text-carlson-charcoal text-xs font-black px-2 py-0.5 rounded border-2 border-carlson-charcoal">🏏 FACING</div>
-          <input type="text" id="striker-name" class="font-bold w-full bg-transparent mt-2 truncate" value="Batter 1">
+          <input type="text" id="striker-name" class="font-bold w-full bg-transparent mt-2 truncate" value="" placeholder="Batter 1">
           <div class="text-sm font-bold mt-1 text-carlson-gray2"><span id="striker-runs">0</span> (<span id="striker-balls">0</span>)</div>
         </div>
         
@@ -84,7 +84,7 @@
 
         <!-- Non-Striker -->
         <div id="nonstriker-card" class="border-2 border-carlson-gray3 rounded-lg p-2 bg-carlson-beige opacity-80">
-          <input type="text" id="nonstriker-name" class="font-bold w-full bg-transparent mt-2 truncate" value="Batter 2">
+          <input type="text" id="nonstriker-name" class="font-bold w-full bg-transparent mt-2 truncate" value="" placeholder="Batter 2">
           <div class="text-sm font-bold mt-1 text-carlson-gray2"><span id="nonstriker-runs">0</span> (<span id="nonstriker-balls">0</span>)</div>
         </div>
       </div>
@@ -93,7 +93,7 @@
       <div class="border-2 border-carlson-maroon rounded-lg p-2 bg-white flex justify-between items-center">
         <div class="w-2/3">
           <div class="text-xs font-black text-carlson-maroon uppercase mb-1">Current Bowler 🔴</div>
-          <input type="text" id="bowler-name" class="font-bold w-full bg-transparent truncate" value="Bowler 1">
+          <input type="text" id="bowler-name" class="font-bold w-full bg-transparent truncate" value="" placeholder="Bowler">
         </div>
         <div class="text-right">
           <div class="text-sm font-bold text-carlson-gray2"><span id="bowler-overs">0.0</span> O</div>
@@ -184,11 +184,11 @@
       score: 0, wickets: 0, balls: 0, target: 0,
       battingTeamName: "Swan Draught Dodgers",
       bowlingTeamName: "Western Weekend Warriors",
-      striker: { name: "Batter 1", runs: 0, balls: 0 },
-      nonStriker: { name: "Batter 2", runs: 0, balls: 0 },
-      bowler: { name: "Bowler 1", runs: 0, wickets: 0, balls: 0 },
-      battingRoster: ["Batter 1", "Batter 2"],
-      bowlingRoster: ["Bowler 1"],
+      striker: { name: "", runs: 0, balls: 0 },
+      nonStriker: { name: "", runs: 0, balls: 0 },
+      bowler: { name: "", runs: 0, wickets: 0, balls: 0 },
+      battingRoster: [],
+      bowlingRoster: [],
       history: []
     };
 
@@ -203,6 +203,9 @@
         if (!state.bowlingRoster) state.bowlingRoster = [];
         renderUI();
         isUpdatingFromFirebase = false;
+      } else {
+        // Database is completely empty, prompt the user instantly
+        promptInitialSetup();
       }
     });
 
@@ -217,6 +220,22 @@
       delete stateCopy.history;
       state.history.push(stateCopy);
       if (state.history.length > 10) state.history.shift(); 
+    }
+
+    function promptInitialSetup() {
+      const b1 = prompt("Welcome to a New Match!\n\nEnter Opening Batter 1:") || "Batter 1";
+      const b2 = prompt("Enter Opening Batter 2:") || "Batter 2";
+      const bw = prompt("Enter Opening Bowler:") || "Bowler 1";
+      
+      state.striker = { name: b1, runs: 0, balls: 0 };
+      state.nonStriker = { name: b2, runs: 0, balls: 0 };
+      state.bowler = { name: bw, runs: 0, wickets: 0, balls: 0 };
+      
+      state.battingRoster = [b1, b2];
+      state.bowlingRoster = [bw];
+      
+      saveState();
+      renderUI();
     }
 
     // ==========================================
@@ -392,16 +411,15 @@
         score: 0, wickets: 0, balls: 0, target: 0,
         battingTeamName: "Swan Draught Dodgers",
         bowlingTeamName: "Western Weekend Warriors",
-        striker: { name: "Batter 1", runs: 0, balls: 0 },
-        nonStriker: { name: "Batter 2", runs: 0, balls: 0 },
-        bowler: { name: "Bowler 1", runs: 0, wickets: 0, balls: 0 },
-        battingRoster: ["Batter 1", "Batter 2"],
-        bowlingRoster: ["Bowler 1"],
+        striker: { name: "", runs: 0, balls: 0 },
+        nonStriker: { name: "", runs: 0, balls: 0 },
+        bowler: { name: "", runs: 0, wickets: 0, balls: 0 },
+        battingRoster: [],
+        bowlingRoster: [],
         history: []
       };
       
-      saveState();
-      renderUI();
+      promptInitialSetup();
       alert("Match archived successfully. Board reset.");
     }
 
@@ -409,11 +427,9 @@
     // 5. UI RENDERING & DRAG/DROP
     // ==========================================
     function renderUI() {
-      // Top Scores
       document.getElementById('main-score').innerHTML = `${state.score}<span class="text-3xl text-carlson-charcoal">/${state.wickets}</span>`;
       document.getElementById('main-overs').innerText = `${Math.floor(state.balls / 6)}.${state.balls % 6}`;
       
-      // Target
       const targetEl = document.getElementById('target-display');
       if (state.target > 0) {
         targetEl.classList.remove('hidden');
@@ -422,11 +438,9 @@
         targetEl.classList.add('hidden');
       }
 
-      // Teams Data
       document.getElementById('batting-team').value = state.battingTeamName || "Swan Draught Dodgers";
       document.getElementById('bowling-team').value = state.bowlingTeamName || "Western Weekend Warriors";
 
-      // Pitch Data
       document.getElementById('striker-name').value = state.striker.name;
       document.getElementById('striker-runs').innerText = state.striker.runs;
       document.getElementById('striker-balls').innerText = state.striker.balls;
@@ -440,7 +454,6 @@
       document.getElementById('bowler-wickets').innerText = state.bowler.wickets;
       document.getElementById('bowler-overs').innerText = `${Math.floor(state.bowler.balls / 6)}.${state.bowler.balls % 6}`;
 
-      // Rosters with Live Editing
       document.getElementById('batting-roster-list').innerHTML = (state.battingRoster || []).map((p, index) => 
         `<input type="text" class="w-full bg-transparent font-bold border-b border-dashed border-carlson-gray3 focus:outline-none truncate" value="${p}" onchange="updateRosterName('bat', ${index}, this.value, '${p}')">`
       ).join('');
@@ -475,12 +488,27 @@
 
     ['batting-team', 'bowling-team', 'striker-name', 'nonstriker-name', 'bowler-name'].forEach(id => {
       document.getElementById(id).addEventListener('change', (e) => {
-        const val = e.target.value;
-        if (id === 'batting-team') state.battingTeamName = val;
-        if (id === 'bowling-team') state.bowlingTeamName = val;
-        if (id === 'striker-name') { state.striker.name = val; checkAndAddPlayer(val, 'bat'); }
-        if (id === 'nonstriker-name') { state.nonStriker.name = val; checkAndAddPlayer(val, 'bat'); }
-        if (id === 'bowler-name') { state.bowler.name = val; checkAndAddPlayer(val, 'bowl'); }
+        const val = e.target.value.trim();
+        if (!val) return;
+
+        if (id === 'batting-team') { state.battingTeamName = val; saveState(); renderUI(); return; }
+        if (id === 'bowling-team') { state.bowlingTeamName = val; saveState(); renderUI(); return; }
+
+        let oldName = "";
+        let role = 'bat';
+        
+        if (id === 'striker-name') { oldName = state.striker.name; state.striker.name = val; }
+        if (id === 'nonstriker-name') { oldName = state.nonStriker.name; state.nonStriker.name = val; }
+        if (id === 'bowler-name') { oldName = state.bowler.name; state.bowler.name = val; role = 'bowl'; }
+        
+        let roster = role === 'bat' ? state.battingRoster : state.bowlingRoster;
+        const index = roster.indexOf(oldName);
+        if (index !== -1) {
+          roster[index] = val; 
+        } else {
+          checkAndAddPlayer(val, role); 
+        }
+        
         saveState();
         renderUI();
       });
